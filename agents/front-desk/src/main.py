@@ -1,8 +1,14 @@
 """
 Kairós Intelligence v2.7.1 — Agente 2: Front-Desk (Atendimento)
-Recepcionista virtual que atende pacientes via WhatsApp.
-Canal: Evolution Go (instância por clínica).
-Modelo: DeepSeek-V4 Flash + Gemini Flash (multimodal).
+Recepcionista virtual MULTI-TENANT.
+
+ARQUITETURA:
+- UM ÚNICO agente no OpenClaw
+- Serve TODAS as clínicas registradas no Paperclip
+- Cada clínica tem: regras, médicos, convênios, SOUL personalizado
+- O Tenant Resolver identifica qual clínica é (via instância Evolution)
+- O Paperclip fornece o contexto específico daquela clínica
+- O GraphRAG busca dados no namespace da clínica (isolamento)
 """
 
 import asyncio
@@ -14,84 +20,116 @@ from shared.config import settings
 from shared.redis_client import redis_client
 from shared.evolution_client import evolution_client
 from shared.paperclip_client import paperclip_client
+from shared.tenant_resolver import tenant_resolver, TenantConfig
 from graphrag.retriever import retriever
 
 logger = logging.getLogger("front-desk")
 
 
 class FrontDeskAgent:
-    """Agente de atendimento ao paciente."""
+    """Agente de atendimento multi-tenant.
 
-    def __init__(self, clinic_id: str = "default"):
-        self.clinic_id = clinic_id
+    UM agente → VÁRIAS clínicas.
+    O comportamento muda de acordo com o tenant (via Paperclip).
+    """
+
+    def __init__(self):
         self.model = settings.DEEPSEEK_MODEL
-        self.system_prompt = self._load_soul()
+        self._base_soul = self._load_base_soul()
         self.timeout_seconds = 1800  # 30 minutos
         self.max_off_topic = 3
 
-    def _load_soul(self) -> str:
-        """Carrega identidade do agente."""
+    def _load_base_soul(self) -> str:
+        """Carrega SOUL.md base (genérico, sem dados de clínica específica).
+
+        Este SOUL é enriquecido em runtime com dados do Paperclip
+        para cada clínica diferente.
+        """
         try:
             with open("agents/front-desk/SOUL.md", "r", encoding="utf-8") as f:
                 return f.read()
         except FileNotFoundError:
             return "Você é a recepcionista virtual da clínica."
 
-    async def process_message(self, phone: str, message: str) -> str:
-        """Processa mensagem do paciente com buffer de 8s e contexto GraphRAG."""
-        # Buffer de 8 segundos
-        is_first = await redis_client.buffer_message(phone, message)
+    async def process_message(
+        self, phone: str, message: str, instance_name: str
+    ) -> str:
+        """Processa mensagem do paciente.
 
+        Args:
+            phone: Número do paciente
+            message: Texto da mensagem
+            instance_name: Nome da instância Evolution (identifica a clínica)
+
+        Fluxo multi-tenant:
+        1. Resolve instance_name → tenant (via Paperclip)
+        2. Carrega config da clínica (médicos, convênios, SOUL)
+        3. Injeta contexto no SOUL base → SOUL personalizado
+        4. Busca contexto do paciente no GraphRAG (namespace da clínica)
+        5. Chama LLM com SOUL personalizado + contexto
+        """
+        # ── 1. RESOLVER TENANT ──────────────────────────────
+        tenant = await tenant_resolver.resolve_by_instance(instance_name)
+        if not tenant:
+            logger.error(f"Tenant não encontrado para instância: {instance_name}")
+            return "Desculpe, estamos com uma instabilidade. Tente novamente em breve! 😊"
+
+        clinic_id = tenant.tenant_id
+
+        # ── 2. BUFFER 8 SEGUNDOS ───────────────────────────
+        is_first = await redis_client.buffer_message(phone, message)
         if is_first:
-            # Aguardar buffer acumular mensagens
             await asyncio.sleep(settings.REDIS_BUFFER_SECONDS)
             messages = await redis_client.get_buffered_messages(phone)
             consolidated = " ".join(messages)
         else:
-            # Mensagem já está sendo processada pelo ciclo anterior
-            return ""
+            return ""  # Já está sendo processada
 
-        # Verificar budget do tenant no Paperclip
-        budget = await paperclip_client.check_budget(self.clinic_id)
+        # ── 3. CHECK BUDGET (PAPERCLIP) ─────────────────────
+        budget = await paperclip_client.check_budget(clinic_id)
         if not budget.get("budget_ok", True):
-            logger.warning(f"Budget excedido para clínica {self.clinic_id}")
-            return "Estamos com muita demanda agora. Por favor, tente novamente em breve! 😊"
+            logger.warning(f"Budget excedido para clínica {tenant.clinic_name}")
+            return ("Estamos com muita demanda agora. "
+                    "Por favor, tente novamente em breve! 😊")
 
-        # Buscar contexto do paciente no GraphRAG
-        context = retriever.get_full_context(self.clinic_id, phone, consolidated)
+        # ── 4. CONTEXTO GRAPHRAG (namespace da clínica) ─────
+        context = retriever.get_full_context(clinic_id, phone, consolidated)
 
-        # Recuperar estado da conversa
+        # ── 5. ESTADO DA CONVERSA (Redis) ───────────────────
         state = await redis_client.get_conversation_state(phone)
         history = state.get("history", []) if state else []
         off_topic_count = state.get("off_topic_count", 0) if state else 0
 
-        # Montar prompt com contexto
+        # ── 6. MONTAR SOUL PERSONALIZADO ────────────────────
+        # SOUL base + dados do Paperclip (clínica) + dados do GraphRAG (paciente)
+        personalized_soul = tenant.build_soul_prompt(self._base_soul)
         context_prompt = self._build_context_prompt(context)
 
         history.append({"role": "user", "content": consolidated})
 
-        # Chamar DeepSeek-V4 Flash
-        response = await self._call_llm(history, context_prompt)
+        # ── 7. CHAMAR LLM ──────────────────────────────────
+        response = await self._call_llm(history, personalized_soul, context_prompt)
 
-        # Verificar timeout
+        # ── 8. SALVAR ESTADO ────────────────────────────────
         history.append({"role": "assistant", "content": response})
         await redis_client.set_conversation_state(
             phone,
             {
                 "history": history[-20:],
                 "off_topic_count": off_topic_count,
-                "clinic_id": self.clinic_id,
+                "clinic_id": clinic_id,
+                "instance_name": instance_name,
                 "last_activity": datetime.now().isoformat(),
             },
             ttl=self.timeout_seconds,
         )
 
-        # Atualizar janela Meta
+        # ── 9. JANELA META ─────────────────────────────────
         await redis_client.update_window(phone)
 
-        # Registrar consumo no Paperclip
+        # ── 10. REGISTRAR CONSUMO NO PAPERCLIP ─────────────
         await paperclip_client.register_token_usage(
-            tenant_id=self.clinic_id,
+            tenant_id=clinic_id,
             agent_name="front-desk",
             tokens_used=len(response.split()) * 2,
             cost_usd=0.0005,
@@ -100,7 +138,7 @@ class FrontDeskAgent:
         return response
 
     def _build_context_prompt(self, context: dict) -> str:
-        """Monta prompt contextual com dados do GraphRAG."""
+        """Monta prompt contextual com dados do GraphRAG (paciente)."""
         parts = []
 
         if context.get("has_patient"):
@@ -115,15 +153,20 @@ class FrontDeskAgent:
         if context.get("faq_matches"):
             parts.append("\nFAQ RELEVANTE:")
             for faq in context["faq_matches"][:3]:
-                parts.append(f"- {faq['metadata'].get('question', '')}: {faq['metadata'].get('answer', '')}")
+                parts.append(
+                    f"- {faq['metadata'].get('question', '')}: "
+                    f"{faq['metadata'].get('answer', '')}"
+                )
 
         return "\n".join(parts) if parts else ""
 
-    async def _call_llm(self, history: list[dict], context: str = "") -> str:
-        """Chama DeepSeek-V4 Flash para gerar resposta."""
-        system = self.system_prompt
+    async def _call_llm(
+        self, history: list[dict], soul: str, context: str = ""
+    ) -> str:
+        """Chama DeepSeek-V4 Flash com SOUL personalizado."""
+        system = soul
         if context:
-            system += f"\n\n--- CONTEXTO ATUAL ---\n{context}"
+            system += f"\n\n--- CONTEXTO DO PACIENTE ---\n{context}"
 
         messages = [{"role": "system", "content": system}] + history
 
@@ -163,5 +206,5 @@ class FrontDeskAgent:
         logger.info(f"Conversa encerrada por timeout: ***{phone[-4:]}")
 
 
-# Instância padrão
+# Instância única — serve TODAS as clínicas
 front_desk = FrontDeskAgent()
