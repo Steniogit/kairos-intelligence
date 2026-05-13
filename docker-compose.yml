@@ -1,9 +1,10 @@
 # =============================================================
-# Kairós Intelligence v2.7 — Docker Compose
+# Kairós Intelligence v2.7.1 — Docker Compose
 # =============================================================
 # Rede: kairos-net (bridge)
-# 8 serviços: Evolution Go, OpenClaw, Redis, PostgreSQL,
-#             MinIO, Chromium (Playwright), Crawl4AI worker, Nginx
+# 10 serviços: Evolution Go, OpenClaw, Paperclip, Redis,
+#              PostgreSQL, Neo4j, ChromaDB, MinIO,
+#              Chromium (Playwright/Crawl4AI), Nginx
 # =============================================================
 
 services:
@@ -42,14 +43,48 @@ services:
     environment:
       - OPENCLAW_CONFIG_PATH=/home/openclaw/.openclaw/openclaw.json
       - OPENCLAW_GATEWAY_PASSWORD=${OPENCLAW_GATEWAY_PASSWORD}
+      - REDIS_URL=${REDIS_URL}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - ADEMED_URL=${ADEMED_URL}
+      - ADEMED_USER=${ADEMED_USER}
+      - ADEMED_PASS=${ADEMED_PASS}
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD}
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
+      - CHROMA_AUTH_TOKEN=${CHROMA_AUTH_TOKEN}
+      - PAPERCLIP_URL=http://paperclip:3000
     volumes:
       - ./openclaw.json:/home/openclaw/.openclaw/openclaw.json:ro
       - ./agents:/home/openclaw/agents:rw
+      - ./shared:/home/openclaw/shared:ro
+      - ./graphrag:/home/openclaw/graphrag:ro
       - openclaw_data:/home/openclaw/.openclaw
     networks:
       - kairos-net
     depends_on:
       - redis
+      - neo4j
+      - chromadb
+      - paperclip
+
+  # --- Control Plane / Governança Multi-Tenant ---
+  paperclip:
+    image: paperclipai/paperclip:latest
+    container_name: kairos-paperclip
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/paperclip
+      - BETTER_AUTH_SECRET=${PAPERCLIP_AUTH_SECRET}
+      - PAPERCLIP_PUBLIC_URL=${PAPERCLIP_PUBLIC_URL:-http://localhost:3000}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+    networks:
+      - kairos-net
+    depends_on:
+      - postgres
 
   # --- Cache e Buffer de Mensagens ---
   redis:
@@ -64,7 +99,7 @@ services:
     networks:
       - kairos-net
 
-  # --- Banco de Dados (Governança) ---
+  # --- Banco de Dados (Governança + Paperclip) ---
   postgres:
     image: postgres:16-alpine
     container_name: kairos-postgres
@@ -77,6 +112,39 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-paperclip-db.sh:/docker-entrypoint-initdb.d/init-paperclip-db.sh:ro
+    networks:
+      - kairos-net
+
+  # --- GraphRAG: Grafo de Conhecimento ---
+  neo4j:
+    image: neo4j:5-community
+    container_name: kairos-neo4j
+    restart: unless-stopped
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD}
+      - NEO4J_PLUGINS=["apoc"]
+    volumes:
+      - neo4j_data:/data
+    networks:
+      - kairos-net
+
+  # --- GraphRAG: Vetores de Embedding ---
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: kairos-chromadb
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ANONYMIZED_TELEMETRY=FALSE
+      - CHROMA_SERVER_AUTHN_PROVIDER=chromadb.auth.token_authn.TokenAuthenticationServerProvider
+      - CHROMA_SERVER_AUTHN_CREDENTIALS=${CHROMA_AUTH_TOKEN}
+    volumes:
+      - chroma_data:/chroma/chroma
     networks:
       - kairos-net
 
@@ -97,7 +165,7 @@ services:
     networks:
       - kairos-net
 
-  # --- Browser para Playwright (Escrita no Ademed) ---
+  # --- Browser para Playwright/Crawl4AI (Ademed) ---
   chromium:
     image: mcr.microsoft.com/playwright:v1.44.0-jammy
     container_name: kairos-chromium
@@ -132,6 +200,7 @@ services:
     depends_on:
       - evolution-go
       - openclaw
+      - paperclip
 
 volumes:
   evolution_data:
@@ -139,6 +208,8 @@ volumes:
   redis_data:
   postgres_data:
   minio_data:
+  neo4j_data:
+  chroma_data:
 
 networks:
   kairos-net:

@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================
-# Kairós Intelligence v2.7 — Health Check
+# Kairós Intelligence v2.7.1 — Health Check
 # =============================================================
 # Uso: ./scripts/health-check.sh
 # Verifica: containers rodando, portas acessíveis, logs sem erro
@@ -10,13 +10,13 @@ set -euo pipefail
 
 ERRORS=0
 
-echo "[INFO] === Health Check — Kairós Intelligence v2.7 ==="
+echo "[INFO] === Health Check — Kairós Intelligence v2.7.1 ==="
 echo ""
 
 # --- Verificar containers ---
 echo "[INFO] Verificando containers..."
 
-SERVICES=("kairos-evolution" "kairos-openclaw" "kairos-redis" "kairos-postgres" "kairos-minio" "kairos-nginx")
+SERVICES=("kairos-evolution" "kairos-openclaw" "kairos-paperclip" "kairos-redis" "kairos-postgres" "kairos-neo4j" "kairos-chromadb" "kairos-minio" "kairos-nginx")
 
 for svc in "${SERVICES[@]}"; do
     STATUS=$(docker inspect -f '{{.State.Status}}' "$svc" 2>/dev/null || echo "not_found")
@@ -46,8 +46,11 @@ check_port() {
 
 check_port "Evolution Go" 8080
 check_port "OpenClaw" 18789
+check_port "Paperclip" 3000
 check_port "Redis" 6379
 check_port "PostgreSQL" 5432
+check_port "Neo4j" 7474
+check_port "ChromaDB" 8000
 check_port "MinIO" 9000
 check_port "Nginx" 80
 

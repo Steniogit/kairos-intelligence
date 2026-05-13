@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================
-# Kairós Intelligence v2.7 — Smoke Test
+# Kairós Intelligence v2.7.1 — Smoke Test
 # =============================================================
 # Uso: ./scripts/smoke-test.sh
 # Testes pós-deploy para validar funcionalidade básica
@@ -10,7 +10,7 @@ set -euo pipefail
 
 ERRORS=0
 
-echo "[INFO] === Smoke Test — Kairós Intelligence v2.7 ==="
+echo "[INFO] === Smoke Test — Kairós Intelligence v2.7.1 ==="
 echo ""
 
 # --- 1. Evolution Go API ---
@@ -80,14 +80,51 @@ else
     ERRORS=$((ERRORS + 1))
 fi
 
+# --- 7. Paperclip (Control Plane) ---
+echo "[INFO] Teste 7: Paperclip Control Plane..."
+PAPERCLIP_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+    http://localhost:3000/ 2>/dev/null || echo "000")
+
+if [ "$PAPERCLIP_RESPONSE" != "000" ]; then
+    echo "  [OK] Paperclip respondendo (HTTP $PAPERCLIP_RESPONSE)"
+else
+    echo "  [!] Paperclip não respondeu"
+    ERRORS=$((ERRORS + 1))
+fi
+
+# --- 8. Neo4j (GraphRAG) ---
+echo "[INFO] Teste 8: Neo4j GraphRAG..."
+NEO4J_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+    http://localhost:7474/ 2>/dev/null || echo "000")
+
+if [ "$NEO4J_RESPONSE" = "200" ]; then
+    echo "  [OK] Neo4j Browser acessível"
+else
+    echo "  [!] Neo4j não respondeu (HTTP $NEO4J_RESPONSE)"
+    ERRORS=$((ERRORS + 1))
+fi
+
+# --- 9. ChromaDB (Vetores) ---
+echo "[INFO] Teste 9: ChromaDB..."
+CHROMA_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+    http://localhost:8000/api/v1/heartbeat 2>/dev/null || echo "000")
+
+if [ "$CHROMA_RESPONSE" = "200" ]; then
+    echo "  [OK] ChromaDB heartbeat OK"
+else
+    echo "  [!] ChromaDB não respondeu (HTTP $CHROMA_RESPONSE)"
+    ERRORS=$((ERRORS + 1))
+fi
+
 echo ""
 
 # --- Resultado ---
+TOTAL=9
 if [ $ERRORS -eq 0 ]; then
-    echo "[OK] === Todos os smoke tests passaram (6/6) ==="
+    echo "[OK] === Todos os smoke tests passaram ($TOTAL/$TOTAL) ==="
     exit 0
 else
-    PASSED=$((6 - ERRORS))
-    echo "[!] === $PASSED/6 testes passaram, $ERRORS falharam ==="
+    PASSED=$((TOTAL - ERRORS))
+    echo "[!] === $PASSED/$TOTAL testes passaram, $ERRORS falharam ==="
     exit 1
 fi

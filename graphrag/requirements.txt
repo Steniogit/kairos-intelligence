@@ -1,0 +1,4 @@
+# Kairós Intelligence v2.7.1 — GraphRAG Dependencies
+neo4j>=5.0
+chromadb>=0.5
+sentence-transformers>=3.0
