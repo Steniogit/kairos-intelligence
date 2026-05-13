@@ -1,0 +1,49 @@
+# Ambiente
+.env
+.env.local
+.env.production
+
+# Logs
+logs/*.log
+logs/*.json
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# Node
+node_modules/
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Docker
+docker-compose.override.yml
+
+# Backups locais
+backups/
+*.bak
+*.backup
+
+# IDEs
+.vscode/
+.idea/
+*.code-workspace
+
+# Arquivos temporários de documentos (LGPD)
+temp_docs/
+*.tmp
+
+# Credenciais
+*.pem
+*.key
+*.cert

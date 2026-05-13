@@ -1,0 +1,156 @@
+{
+  "version": "2.7.0",
+  "gateway": {
+    "port": 18789,
+    "password": "PLACEHOLDER_OPENCLAW_PASSWORD"
+  },
+  "agents": [
+    {
+      "name": "Prometheus",
+      "description": "Assistente executivo do gestor da clínica",
+      "workspace": "/home/openclaw/agents/prometheus",
+      "soul": "/home/openclaw/agents/prometheus/SOUL.md",
+      "memory": "/home/openclaw/agents/prometheus/MEMORY.md",
+      "map": "/home/openclaw/agents/prometheus/MAP.md",
+      "model": {
+        "provider": "deepseek",
+        "model": "deepseek-chat",
+        "api_key_env": "DEEPSEEK_API_KEY",
+        "base_url": "https://api.deepseek.com",
+        "temperature": 0.7,
+        "max_tokens": 4096
+      },
+      "tools": ["manager", "notifications", "synchronizer"],
+      "triggers": {
+        "whatsapp_number": "PLACEHOLDER_GESTOR_PHONE"
+      }
+    },
+    {
+      "name": "Front-Desk",
+      "description": "Recepcionista virtual 24/7 para pacientes",
+      "workspace": "/home/openclaw/agents/front-desk",
+      "soul": "/home/openclaw/agents/front-desk/SOUL.md",
+      "memory": "/home/openclaw/agents/front-desk/MEMORY.md",
+      "map": "/home/openclaw/agents/front-desk/MAP.md",
+      "model": {
+        "provider": "deepseek",
+        "model": "deepseek-chat",
+        "api_key_env": "DEEPSEEK_API_KEY",
+        "base_url": "https://api.deepseek.com",
+        "temperature": 0.6,
+        "max_tokens": 2048
+      },
+      "tools": ["manager"],
+      "triggers": {
+        "whatsapp_instance": "PLACEHOLDER_EVOLUTION_INSTANCE",
+        "exclude_numbers": ["PLACEHOLDER_GESTOR_PHONE"]
+      }
+    },
+    {
+      "name": "Manager",
+      "description": "Agente executor — acessa ERP Ademed via Crawl4AI e Playwright",
+      "workspace": "/home/openclaw/agents/manager",
+      "soul": "/home/openclaw/agents/manager/SOUL.md",
+      "memory": "/home/openclaw/agents/manager/MEMORY.md",
+      "map": "/home/openclaw/agents/manager/MAP.md",
+      "skills": [
+        "/home/openclaw/agents/manager/skills/admed/KAIROS-SKILL-ADMED-v2.7.md"
+      ],
+      "internal_only": true
+    },
+    {
+      "name": "Notifications",
+      "description": "Agente de comunicação proativa — lembretes, NPS, dicas",
+      "workspace": "/home/openclaw/agents/notifications",
+      "soul": "/home/openclaw/agents/notifications/SOUL.md",
+      "memory": "/home/openclaw/agents/notifications/MEMORY.md",
+      "map": "/home/openclaw/agents/notifications/MAP.md",
+      "cron_jobs": [
+        {
+          "name": "confirmation_reminders",
+          "schedule": "0 * * * *",
+          "description": "Verifica consultas nas próximas 18h e envia lembretes"
+        },
+        {
+          "name": "second_reminders",
+          "schedule": "0 * * * *",
+          "description": "Segundo lembrete 4h antes para sem resposta"
+        },
+        {
+          "name": "post_consultation",
+          "schedule": "0 10 * * *",
+          "description": "Mensagem pós-consulta 24h após atendimento"
+        },
+        {
+          "name": "health_tips",
+          "schedule": "0 10 */3 * *",
+          "description": "Dicas de saúde a cada 3 dias para opt-in"
+        },
+        {
+          "name": "birthdays",
+          "schedule": "0 8 * * *",
+          "description": "Mensagens de aniversário"
+        },
+        {
+          "name": "daily_report",
+          "schedule": "0 8 * * *",
+          "description": "Relatório diário para o gestor via Prometheus"
+        },
+        {
+          "name": "weekly_report",
+          "schedule": "0 8 * * 1",
+          "description": "Relatório semanal (segundas)"
+        },
+        {
+          "name": "monthly_report",
+          "schedule": "0 8 1 * *",
+          "description": "Relatório mensal (dia 1)"
+        }
+      ],
+      "internal_only": true
+    },
+    {
+      "name": "Synchronizer",
+      "description": "Sincroniza médicos e horários do Ademed a cada 30 minutos",
+      "workspace": "/home/openclaw/agents/synchronizer",
+      "soul": "/home/openclaw/agents/synchronizer/SOUL.md",
+      "map": "/home/openclaw/agents/synchronizer/MAP.md",
+      "cron_jobs": [
+        {
+          "name": "sync_doctors",
+          "schedule": "*/30 * * * *",
+          "description": "Sincroniza lista de médicos ativos"
+        },
+        {
+          "name": "sync_insurance",
+          "schedule": "0 */6 * * *",
+          "description": "Sincroniza lista de convênios"
+        }
+      ],
+      "internal_only": true
+    }
+  ],
+  "services": {
+    "redis": {
+      "url": "redis://redis:6379/0",
+      "buffer_seconds": 8
+    },
+    "evolution": {
+      "url": "http://evolution-go:8080",
+      "api_key_env": "EVOLUTION_API_KEY",
+      "instance": "PLACEHOLDER_EVOLUTION_INSTANCE"
+    },
+    "gemini": {
+      "api_key_env": "GEMINI_API_KEY",
+      "model_vision": "gemini-2.5-flash",
+      "model_transcription": "gemini-2.5-flash",
+      "model_reasoning": "gemini-2.5-pro"
+    },
+    "tts": {
+      "provider": "google-cloud",
+      "voice": "PLACEHOLDER_TTS_VOICE",
+      "speed": 1.0,
+      "language": "pt-BR"
+    }
+  }
+}
