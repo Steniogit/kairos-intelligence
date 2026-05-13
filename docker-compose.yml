@@ -55,15 +55,15 @@ services:
     init: true
     restart: unless-stopped
     ports:
-      - "${OPENCLAW_PORT}:${OPENCLAW_PORT}"
+      - "18789:49844"
     labels:
       - traefik.enable=true
       - traefik.http.routers.kairos-openclaw.rule=Host(`kairos.${TRAEFIK_HOST}`)
       - traefik.http.routers.kairos-openclaw.entrypoints=websecure
       - traefik.http.routers.kairos-openclaw.tls.certresolver=letsencrypt
-      - traefik.http.services.kairos-openclaw.loadbalancer.server.port=${OPENCLAW_PORT}
+      - traefik.http.services.kairos-openclaw.loadbalancer.server.port=49844
     environment:
-      - PORT=${OPENCLAW_PORT}
+      - PORT=49844
       - OPENCLAW_CONFIG_PATH=/data/openclaw.json
       - OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN}
       - REDIS_URL=redis://kairos-redis:6379
@@ -81,11 +81,11 @@ services:
       - EVOLUTION_API_URL=http://kairos-evolution:8080
       - EVOLUTION_API_KEY=${EVOLUTION_API_KEY}
     volumes:
-      - ./openclaw.json:/data/openclaw.json:ro
-      - ./agents:/data/agents:rw
-      - ./shared:/data/shared:ro
-      - ./graphrag:/data/graphrag:ro
       - openclaw_data:/data
+      - ./openclaw.json:/data/openclaw.json
+      - ./agents:/data/agents
+      - ./shared:/data/shared
+      - ./graphrag:/data/graphrag
     networks:
       - kairos-net
     depends_on:
@@ -95,10 +95,12 @@ services:
       - paperclip
 
   # ─────────────────────────────────────────────
-  # PAPERCLIP — Control Plane Multi-Tenant
+  # PAPERCLIP — Control Plane Multi-Tenant (Custom Build)
   # ─────────────────────────────────────────────
   paperclip:
-    image: paperclipai/paperclip:latest
+    build:
+      context: ./paperclip
+      dockerfile: Dockerfile
     container_name: kairos-paperclip
     restart: unless-stopped
     labels:
@@ -111,7 +113,6 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@kairos-postgres:5432/paperclip
       - BETTER_AUTH_SECRET=${PAPERCLIP_AUTH_SECRET}
       - PAPERCLIP_PUBLIC_URL=https://paperclip.${TRAEFIK_HOST}
-      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
     networks:
       - kairos-net
     depends_on:
@@ -204,15 +205,11 @@ services:
   # CHROMIUM — Browser para Playwright/Crawl4AI (Ademed)
   # ─────────────────────────────────────────────
   chromium:
-    image: mcr.microsoft.com/playwright:v1.44.0-jammy
+    build:
+      context: ./chromium
+      dockerfile: Dockerfile
     container_name: kairos-chromium
     restart: unless-stopped
-    command: >
-      bash -c "
-        pip install playwright crawl4ai &&
-        playwright install chromium &&
-        tail -f /dev/null
-      "
     environment:
       - ADEMED_URL=${ADEMED_URL}
       - ADEMED_USER=${ADEMED_USER}
