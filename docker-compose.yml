@@ -164,15 +164,11 @@ services:
       - kairos-net
 
   chromium:
-    image: mcr.microsoft.com/playwright:v1.44.0-jammy
+    build:
+      context: ./chromium
+      dockerfile: Dockerfile
     container_name: kairos-chromium
     restart: unless-stopped
-    command: >
-      bash -c "
-        pip install playwright crawl4ai &&
-        playwright install chromium &&
-        tail -f /dev/null
-      "
     environment:
       - ADEMED_URL=${ADEMED_URL}
       - ADEMED_USER=${ADEMED_USER}
