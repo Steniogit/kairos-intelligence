@@ -1,4 +1,6 @@
-# Kairos Intelligence v2.7.1 - Hostinger VPS + Traefik
+# =============================================================
+# Kairós Intelligence v2.7.1 — Docker Compose (Hostinger VPS)
+# =============================================================
 
 services:
   evolution-go:
@@ -18,9 +20,7 @@ services:
       - S3_ENABLED=true
       - S3_ACCESS_KEY=${MINIO_ACCESS_KEY}
       - S3_SECRET_KEY=${MINIO_SECRET_KEY}
-      - S3_ENDPOINT=kairos-minio
-      - S3_PORT=9000
-      - S3_USE_SSL=false
+      - S3_ENDPOINT=http://kairos-minio:9000
       - S3_BUCKET=${MINIO_BUCKET}
     volumes:
       - evolution_data:/evolution/instances
@@ -37,15 +37,15 @@ services:
     init: true
     restart: unless-stopped
     ports:
-      - "${OPENCLAW_PORT}:${OPENCLAW_PORT}"
+      - "18789:49844"
     labels:
       - traefik.enable=true
       - traefik.http.routers.kairos-openclaw.rule=Host(`kairos.${TRAEFIK_HOST}`)
       - traefik.http.routers.kairos-openclaw.entrypoints=websecure
       - traefik.http.routers.kairos-openclaw.tls.certresolver=letsencrypt
-      - traefik.http.services.kairos-openclaw.loadbalancer.server.port=${OPENCLAW_PORT}
+      - traefik.http.services.kairos-openclaw.loadbalancer.server.port=49844
     environment:
-      - PORT=${OPENCLAW_PORT}
+      - PORT=49844
       - OPENCLAW_CONFIG_PATH=/data/openclaw.json
       - OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN}
       - REDIS_URL=redis://kairos-redis:6379
@@ -63,11 +63,11 @@ services:
       - EVOLUTION_API_URL=http://kairos-evolution:8080
       - EVOLUTION_API_KEY=${EVOLUTION_API_KEY}
     volumes:
+      - openclaw_data:/data
       - ./openclaw.json:/data/openclaw.json
       - ./agents:/data/agents
       - ./shared:/data/shared
       - ./graphrag:/data/graphrag
-      - openclaw_data:/data
     networks:
       - kairos-net
     depends_on:
@@ -90,6 +90,8 @@ services:
       - traefik.http.services.kairos-paperclip.loadbalancer.server.port=3000
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@kairos-postgres:5432/paperclip
+      - BETTER_AUTH_SECRET=${PAPERCLIP_AUTH_SECRET}
+      - PAPERCLIP_PUBLIC_URL=https://paperclip.${TRAEFIK_HOST}
     networks:
       - kairos-net
     depends_on:
