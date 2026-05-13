@@ -1,23 +1,6 @@
-# =============================================================
-# Kairós Intelligence v2.7.1 — Docker Compose (Hostinger VPS)
-# =============================================================
-# Adaptado para Traefik da Hostinger (SSL automático via Let's Encrypt)
-# Sem Nginx — o Traefik já faz reverse proxy + HTTPS
-#
-# Serviços externos (Traefik labels = acesso via HTTPS):
-#   - Evolution Go      → evolution.${TRAEFIK_HOST}
-#   - OpenClaw           → kairos.${TRAEFIK_HOST}
-#   - Paperclip          → paperclip.${TRAEFIK_HOST}
-#   - Neo4j Browser      → neo4j.${TRAEFIK_HOST}
-#
-# Serviços internos (sem acesso externo):
-#   - PostgreSQL, Redis, ChromaDB, MinIO, Chromium
-# =============================================================
+# Kairos Intelligence v2.7.1 - Hostinger VPS + Traefik
 
 services:
-  # ─────────────────────────────────────────────
-  # EVOLUTION GO — Gateway WhatsApp
-  # ─────────────────────────────────────────────
   evolution-go:
     image: atendai/evolution-api:latest
     container_name: kairos-evolution
@@ -46,9 +29,6 @@ services:
       - redis
       - minio
 
-  # ─────────────────────────────────────────────
-  # OPENCLAW — Orquestrador de Agentes (Projeto)
-  # ─────────────────────────────────────────────
   openclaw:
     image: ghcr.io/hostinger/hvps-openclaw:latest
     container_name: kairos-openclaw
@@ -94,11 +74,10 @@ services:
       - chromadb
       - paperclip
 
-  # ─────────────────────────────────────────────
-  # PAPERCLIP — Control Plane Multi-Tenant
-  # ─────────────────────────────────────────────
   paperclip:
-    image: paperclipai/paperclip:latest
+    build:
+      context: ./paperclip
+      dockerfile: Dockerfile
     container_name: kairos-paperclip
     restart: unless-stopped
     labels:
@@ -109,17 +88,11 @@ services:
       - traefik.http.services.kairos-paperclip.loadbalancer.server.port=3000
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@kairos-postgres:5432/paperclip
-      - BETTER_AUTH_SECRET=${PAPERCLIP_AUTH_SECRET}
-      - PAPERCLIP_PUBLIC_URL=https://paperclip.${TRAEFIK_HOST}
-      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
     networks:
       - kairos-net
     depends_on:
       - postgres
 
-  # ─────────────────────────────────────────────
-  # REDIS — Cache, Buffer 8s, Filas
-  # ─────────────────────────────────────────────
   redis:
     image: redis:7-alpine
     container_name: kairos-redis
@@ -130,9 +103,6 @@ services:
     networks:
       - kairos-net
 
-  # ─────────────────────────────────────────────
-  # POSTGRESQL — Banco de dados (Evolution + Paperclip)
-  # ─────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
     container_name: kairos-postgres
@@ -147,9 +117,6 @@ services:
     networks:
       - kairos-net
 
-  # ─────────────────────────────────────────────
-  # NEO4J — GraphRAG (Grafo de Conhecimento)
-  # ─────────────────────────────────────────────
   neo4j:
     image: neo4j:5-community
     container_name: kairos-neo4j
@@ -168,9 +135,6 @@ services:
     networks:
       - kairos-net
 
-  # ─────────────────────────────────────────────
-  # CHROMADB — GraphRAG (Vetores de Embedding)
-  # ─────────────────────────────────────────────
   chromadb:
     image: chromadb/chroma:latest
     container_name: kairos-chromadb
@@ -184,9 +148,6 @@ services:
     networks:
       - kairos-net
 
-  # ─────────────────────────────────────────────
-  # MINIO — Armazenamento de Mídia (áudios, imagens)
-  # ─────────────────────────────────────────────
   minio:
     image: minio/minio:latest
     container_name: kairos-minio
@@ -200,9 +161,6 @@ services:
     networks:
       - kairos-net
 
-  # ─────────────────────────────────────────────
-  # CHROMIUM — Browser para Playwright/Crawl4AI (Ademed)
-  # ─────────────────────────────────────────────
   chromium:
     image: mcr.microsoft.com/playwright:v1.44.0-jammy
     container_name: kairos-chromium
