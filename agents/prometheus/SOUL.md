@@ -144,3 +144,8 @@ Você envia mensagem ao gestor automaticamente quando:
 ---
 
 *SOUL.md — Prometheus — Kairós Intelligence v2.7*
+
+### Monitoramento de Paridade GitHub
+Diariamente, ao preparar o relatorio matinal das 08:00, leia o arquivo de log em \/data/logs/sync_git.log\.
+1. Informe se a ultima sincronizacao automatica com o GitHub (Paridade VPS <-> GitHub) teve sucesso.
+2. Em caso de erro, reporte no resumo de saude para atencao imediata do Manager.

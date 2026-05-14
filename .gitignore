@@ -47,3 +47,16 @@ temp_docs/
 *.pem
 *.key
 *.cert
+
+# Kairós Volumes & Data
+/data/
+/postgres_data/
+/neo4j_data/
+/paperclip_data/
+/minio_data/
+/evolution_data/
+/chromadb_data/
+/redis_data/
+
+# Log Files
+/logs/
