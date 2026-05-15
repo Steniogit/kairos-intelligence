@@ -1,120 +1,45 @@
 {
-  "update": {
-    "channel": "stable",
-    "checkOnStart": false
-  },
-  "browser": {
-    "headless": true,
-    "noSandbox": true,
-    "defaultProfile": "openclaw"
-  },
-  "commands": {
-    "bash": true,
-    "native": "auto",
-    "nativeSkills": "auto",
-    "restart": true
-  },
-  "tools": {
-    "profile": "full",
-    "elevated": {
-      "enabled": true,
-      "allowFrom": {
-        "webchat": [
-          "*"
-        ]
-      }
-    }
-  },
-  "agents": {
-    "list": [
-      {
-        "id": "main",
-        "name": "main",
-        "agentDir": "/data/agents/main",
-        "default": true
-      },
-      {
-        "id": "front-desk",
-        "name": "front-desk",
-        "agentDir": "/data/agents/front-desk"
-      },
-      {
-        "id": "manager",
-        "name": "manager",
-        "agentDir": "/data/agents/manager"
-      },
-      {
-        "id": "notifications",
-        "name": "notifications",
-        "agentDir": "/data/agents/notifications"
-      },
-      {
-        "id": "prometheus",
-        "name": "prometheus",
-        "agentDir": "/data/agents/prometheus"
-      },
-      {
-        "id": "synchronizer",
-        "name": "synchronizer",
-        "agentDir": "/data/agents/synchronizer"
-      }
-    ],
-    "defaults": {
-      "workspace": "/data/.openclaw/workspace",
-      "model": "google/gemini-3.1-pro-preview",
-      "models": {},
-      "thinkingDefault": "off",
-      "reasoningDefault": "off",
-      "skipBootstrap": true
-    }
-  },
+  // OpenClaw Config — Kairós Intelligence Ecosystem
+  // Formato: JSON5 (suporta comentários e trailing commas)
+
   "gateway": {
-    "mode": "local",
-    "controlUi": {
-      "dangerouslyDisableDeviceAuth": true,
-      "allowInsecureAuth": true,
-      "dangerouslyAllowHostHeaderOriginFallback": true
-    },
-    "auth": {
-      "mode": "token",
-      "token": "IjO8xUToVlbNu6SgnVcuftoIwIFNU0cr",
-      "rateLimit": {
-        "maxAttempts": 10,
-        "windowMs": 60000,
-        "lockoutMs": 300000
-      }
-    },
-    "remote": {
-      "token": "IjO8xUToVlbNu6SgnVcuftoIwIFNU0cr"
-    },
-    "trustedProxies": [
-      "127.0.0.1/32"
-    ]
+    "mode": "local"
   },
+
+  // ─── Plugins ────────────────────────────────────────
   "plugins": {
-    "bundledDiscovery": "compat"
-  },
-  "skills": {
-    "load": {
-      "extraDirs": [
-        "/data/.openclaw/skills"
-      ]
-    },
+    "allow": ["diagnostics-otel", "telemetry"],
     "entries": {
-      "hhmail": {
+      "diagnostics-otel": {
+        "enabled": true
+      },
+      "telemetry": {
         "enabled": true
       }
     }
   },
-  "models": {
-    "mode": "merge"
-  },
-  "messages": {
-    "groupChat": {
-      "visibleReplies": "message_tool"
+
+  // ─── Observabilidade (OpenTelemetry) ────────────────
+  "diagnostics": {
+    "enabled": true,
+    "otel": {
+      "enabled": true,
+      "endpoint": "http://kairos-paperclip:3000/api/otel",
+      "protocol": "http/protobuf",
+      "serviceName": "kairos-openclaw",
+      "traces": true,
+      "metrics": true,
+      "logs": true,
+      "sampleRate": 1.0
     }
   },
-  "hooks": {
-    "token": "hooks_IjO8xUToVlbNu6SgnVcuftoIwIFNU0cr"
+
+  // ─── Guardrails (Limites do Agente) ─────────────────
+  // Definidos no runtime do agente, não na telemetria global.
+  // Cada agente (Front-Desk, Manager, Sincronizador)
+  // herda de seu SOUL.md + configs abaixo.
+  "agentDefaults": {
+    "maxToolCalls": 10,
+    "timeoutSeconds": 120
   }
 }

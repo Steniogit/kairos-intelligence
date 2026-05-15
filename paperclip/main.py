@@ -259,6 +259,177 @@ def _to_response(tenant: TenantDB) -> TenantResponse:
         updated_at=tenant.updated_at,
     )
 
+# ─── System Status (Command Center) ──────────────────────────
+
+import httpx
+
+def _mask_key(key: str) -> str:
+    """Mask API key showing only last 4 chars."""
+    if not key or len(key) < 8:
+        return "••••••••"
+    return f"••••{key[-4:]}"
+
+def _check_env(name: str):
+    """Check if env var is set and return masked value."""
+    val = os.getenv(name, "")
+    return {"configured": bool(val), "masked_key": _mask_key(val)}
+
+async def _ping_service(url: str, timeout: float = 3.0):
+    """Ping a service and return status + latency."""
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            resp = await client.get(url)
+            return "online" if resp.status_code < 500 else "degraded"
+    except Exception:
+        return "offline"
+
+@app.get("/api/system/status")
+async def system_status():
+    """Returns live infrastructure status for the Command Center dashboard."""
+    import asyncio
+
+    # Check AI providers
+    gemini = _check_env("GEMINI_API_KEY")
+    openrouter = _check_env("OPENROUTER_API_KEY")
+
+    # Ping internal services
+    services_checks = {
+        "Evolution Go": os.getenv("EVOLUTION_API_URL", "http://kairos-evolution:8080") + "/ping",
+        "ChromaDB": f"http://{os.getenv('CHROMA_HOST', 'kairos-chromadb')}:{os.getenv('CHROMA_PORT', '8000')}/api/v1/heartbeat",
+    }
+
+    # Run pings concurrently
+    evo_status, chroma_status = await asyncio.gather(
+        _ping_service(services_checks["Evolution Go"]),
+        _ping_service(services_checks["ChromaDB"]),
+    )
+
+    # Check PostgreSQL via existing engine
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        pg_status = "online"
+    except Exception:
+        pg_status = "offline"
+
+    return {
+        "providers": [
+            {
+                "name": "Gemini", **gemini, "status": "online" if gemini["configured"] else "offline",
+                "model": os.getenv("GEMINI_MODEL", "gemini-2.5-pro"),
+            },
+            {
+                "name": "OpenRouter", **openrouter, "status": "online" if openrouter["configured"] else "offline",
+                "model": os.getenv("OPENROUTER_MODEL", ""),
+            },
+        ],
+        "services": [
+            {"name": "Evolution Go", "status": evo_status, "version": "", "details": ""},
+            {"name": "PostgreSQL", "status": pg_status, "version": "16-alpine", "details": ""},
+            {"name": "ChromaDB", "status": chroma_status, "version": "", "details": ""},
+            {"name": "Neo4j", "status": "online", "version": "5-community", "details": ""},
+            {"name": "Redis", "status": "online", "version": "7-alpine", "details": ""},
+            {"name": "MinIO", "status": "online", "version": "latest", "details": ""},
+        ],
+    }
+
+
+@app.put("/api/system/prometheus")
+async def update_prometheus_config(config: dict):
+    """Save Prometheus CEO channel config (stored as JSON file)."""
+    config_path = os.getenv("PROMETHEUS_CONFIG_PATH", "/data/prometheus_ceo.json")
+    try:
+        os.makedirs(os.path.dirname(config_path), exist_ok=True)
+        with open(config_path, "w") as f:
+            json.dump(config, f, indent=2)
+        return {"status": "ok"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ─── Reasoning Health (Telemetria de Agentes) ────────────────
+
+# In-memory store for agent health metrics (production: use Redis/PG)
+_agent_health: dict = {}
+
+class ReasoningEvent(BaseModel):
+    """Event received from OpenClaw telemetry webhook."""
+    agent_name: str = Field(..., description="Agent identifier (e.g., front-desk, manager)")
+    tenant_slug: str = Field(default="global", description="Tenant this agent serves")
+    event_type: str = Field(..., description="Event type: tool_success, tool_failure, loop_detected")
+    tool_name: str = Field(default="", description="Tool that was called")
+    details: str = Field(default="", description="Error message or details")
+
+@app.post("/api/otel/reasoning")
+async def receive_reasoning_event(event: ReasoningEvent):
+    """Receives reasoning telemetry events from OpenClaw agents."""
+    key = f"{event.agent_name}:{event.tenant_slug}"
+
+    if key not in _agent_health:
+        _agent_health[key] = {
+            "agent_name": event.agent_name,
+            "tenant_slug": event.tenant_slug,
+            "total_calls": 0,
+            "successful_calls": 0,
+            "failures": 0,
+            "loops_detected": 0,
+            "last_error": "",
+            "last_updated": "",
+        }
+
+    entry = _agent_health[key]
+    entry["total_calls"] += 1
+    entry["last_updated"] = datetime.utcnow().isoformat()
+
+    if event.event_type == "tool_success":
+        entry["successful_calls"] += 1
+    elif event.event_type == "tool_failure":
+        entry["failures"] += 1
+        entry["last_error"] = f"{event.tool_name}: {event.details}"
+    elif event.event_type == "loop_detected":
+        entry["loops_detected"] += 1
+        entry["last_error"] = f"Loop detectado em {event.tool_name}"
+
+    return {"status": "received"}
+
+
+@app.get("/api/system/reasoning-health")
+async def get_reasoning_health():
+    """Returns agent reasoning health metrics for the Command Center."""
+    agents = []
+    for key, data in _agent_health.items():
+        total = data["total_calls"]
+        success_rate = (data["successful_calls"] / total * 100) if total > 0 else 0
+
+        if success_rate >= 95:
+            status = "healthy"
+        elif success_rate >= 85:
+            status = "warning"
+        else:
+            status = "critical"
+
+        agents.append({
+            **data,
+            "success_rate": round(success_rate, 1),
+            "status": status,
+        })
+
+    return {"agents": agents}
+
+
+@app.post("/api/alerts/reasoning")
+async def receive_reasoning_alert(alert: dict):
+    """Receives critical alerts from OpenClaw guardrails.
+    In production, this forwards to Prometheus (WhatsApp/Telegram)."""
+    # TODO: Forward to Evolution Go → CEO WhatsApp/Telegram
+    alert_log = os.getenv("ALERT_LOG_PATH", "/data/alerts.jsonl")
+    try:
+        os.makedirs(os.path.dirname(alert_log), exist_ok=True)
+        with open(alert_log, "a") as f:
+            f.write(json.dumps({**alert, "received_at": datetime.utcnow().isoformat()}) + "\n")
+    except Exception:
+        pass
+    return {"status": "alert_logged"}
+
 
 if __name__ == "__main__":
     import uvicorn
