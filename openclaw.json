@@ -36,7 +36,8 @@
       "workspace": "/data/.openclaw/workspace",
       "model": "google/gemini-3.1-pro-preview",
       "models": {},
-      "thinkingDefault": "low",
+      "thinkingDefault": "off",
+      "reasoningDefault": "off",
       "skipBootstrap": true
     }
   },
