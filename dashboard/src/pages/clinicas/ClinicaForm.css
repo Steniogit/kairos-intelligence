@@ -1,0 +1,190 @@
+/* ============================================================
+   ClinicaForm — Estilos completos
+   ============================================================ */
+
+.clinica-form-page {
+  max-width: 1000px;
+}
+
+.clinica-form-header {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-md);
+  margin-bottom: var(--k-space-lg);
+}
+.clinica-form-header .clinicas-title {
+  flex: 1;
+}
+
+.clinicas-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--k-space-md);
+  min-height: 40vh;
+  color: var(--k-text-muted);
+}
+
+/* Form Sections */
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-space-md);
+}
+
+.form-section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+  color: var(--k-text-primary);
+}
+.form-section-title h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.form-section-desc {
+  font-size: 0.875rem;
+  color: var(--k-text-secondary);
+  line-height: 1.5;
+}
+
+.form-subtitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.form-divider {
+  height: 1px;
+  background: var(--k-border);
+  margin: var(--k-space-sm) 0;
+}
+
+/* Form Grid */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--k-space-md);
+}
+
+.form-grid-single {
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-space-md);
+  max-width: 500px;
+}
+
+/* Alerts */
+.form-alert {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+  padding: 12px 16px;
+  border-radius: var(--k-radius-md);
+  font-size: 0.85rem;
+}
+.form-alert-info {
+  background: var(--k-info-bg);
+  color: var(--k-info);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+.form-alert-success {
+  background: var(--k-success-bg);
+  color: var(--k-success);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+.form-alert-warning {
+  background: var(--k-warning-bg);
+  color: var(--k-warning);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+/* Upload Area */
+.upload-area {
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-space-sm);
+}
+
+.upload-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--k-space-xs);
+  padding: var(--k-space-xl);
+  border: 2px dashed var(--k-border);
+  border-radius: var(--k-radius-lg);
+  cursor: pointer;
+  text-align: center;
+  transition: all var(--k-transition-fast);
+  color: var(--k-text-muted);
+}
+.upload-dropzone:hover {
+  border-color: var(--k-accent);
+  background: var(--k-accent-glow);
+  color: var(--k-accent);
+}
+
+.upload-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-space-xs);
+}
+
+.upload-file {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+  padding: 8px 12px;
+  background: var(--k-bg-elevated);
+  border-radius: var(--k-radius-md);
+}
+.upload-file-name {
+  flex: 1;
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Jarvis Toggle Row */
+.jarvis-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--k-space-md);
+  background: var(--k-bg-elevated);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-md);
+}
+
+/* Onboarding Link Card */
+.onboarding-link-card {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-md);
+  padding: var(--k-space-md) var(--k-space-lg);
+  background: var(--k-bg-elevated);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-lg);
+}
+.onboarding-qr-icon {
+  color: var(--k-accent);
+  flex-shrink: 0;
+}
+.onboarding-link-info {
+  flex: 1;
+}
+.onboarding-link-url {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--k-accent);
+  font-family: var(--k-font-mono);
+  margin-bottom: 4px;
+}
+
+@media (max-width: 768px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .clinica-form-header { flex-wrap: wrap; }
+}

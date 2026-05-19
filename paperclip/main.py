@@ -1,101 +1,265 @@
-import os,json,uuid
+"""
+Paperclip — Control Plane Multi-Tenant para Kairós Intelligence
+================================================================
+API REST para gerenciar tenants (clínicas), suas configurações,
+e fornecer dados de contexto para os agentes OpenClaw.
+"""
+
+import os
+import json
+import uuid
 from datetime import datetime
 from typing import Optional
 from contextlib import asynccontextmanager
-from fastapi import FastAPI,HTTPException,Depends
+
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from sqlalchemy import create_engine,Column,String,Text,DateTime,Boolean
-from sqlalchemy.orm import sessionmaker,Session,declarative_base
+from pydantic import BaseModel, Field
+from sqlalchemy import create_engine, Column, String, Text, DateTime, Boolean
+from sqlalchemy.orm import sessionmaker, Session, declarative_base
 
-DATABASE_URL=os.getenv("DATABASE_URL","postgresql://kairos_user:kairos@localhost:5432/paperclip")
-engine=create_engine(DATABASE_URL,pool_pre_ping=True)
-SessionLocal=sessionmaker(autocommit=False,autoflush=False,bind=engine)
-Base=declarative_base()
+# ─── Database Setup ────────────────────────────────────────────
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://kairos_user:kairos@localhost:5432/paperclip"
+)
 
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+
+# ─── Models ────────────────────────────────────────────────────
 class TenantDB(Base):
-    __tablename__="tenants"
-    id=Column(String(36),primary_key=True,default=lambda:str(uuid.uuid4()))
-    name=Column(String(255),nullable=False)
-    slug=Column(String(100),unique=True,nullable=False)
-    evolution_instance=Column(String(255),unique=True,nullable=False)
-    active=Column(Boolean,default=True)
-    config_json=Column(Text,default="{}")
-    soul_prompt=Column(Text,default="")
-    created_at=Column(DateTime,default=datetime.utcnow)
-    updated_at=Column(DateTime,default=datetime.utcnow,onupdate=datetime.utcnow)
+    """Tabela de tenants (clínicas)."""
+    __tablename__ = "tenants"
 
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String(255), nullable=False)
+    slug = Column(String(100), unique=True, nullable=False)
+    evolution_instance = Column(String(255), unique=True, nullable=False)
+    active = Column(Boolean, default=True)
+    config_json = Column(Text, default="{}")
+    soul_prompt = Column(Text, default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+# ─── Pydantic Schemas ─────────────────────────────────────────
 class TenantCreate(BaseModel):
-    name:str;slug:str;evolution_instance:str;config:dict={};soul_prompt:str=""
-class TenantUpdate(BaseModel):
-    name:Optional[str]=None;active:Optional[bool]=None;config:Optional[dict]=None;soul_prompt:Optional[str]=None
-class TenantResponse(BaseModel):
-    id:str;name:str;slug:str;evolution_instance:str;active:bool;config:dict;soul_prompt:str;created_at:datetime;updated_at:datetime
-    class Config:
-        from_attributes=True
-class TenantConfig(BaseModel):
-    tenant_id:str;name:str;slug:str;evolution_instance:str;soul_prompt:str;medicos:list=[];convenios:list=[];horarios:dict={};endereco:dict={};regras_negocio:dict={};telefone:str="";whatsapp_gestor:str=""
+    name: str = Field(..., description="Nome da clínica", example="Clínica Sorriso")
+    slug: str = Field(..., description="Identificador único", example="clinica-sorriso")
+    evolution_instance: str = Field(..., description="Nome da instância Evolution Go", example="clinica-sorriso-wa")
+    config: dict = Field(default_factory=dict, description="Configurações da clínica")
+    soul_prompt: str = Field(default="", description="SOUL personalizado do agente")
 
+
+class TenantUpdate(BaseModel):
+    name: Optional[str] = None
+    active: Optional[bool] = None
+    config: Optional[dict] = None
+    soul_prompt: Optional[str] = None
+
+
+class TenantResponse(BaseModel):
+    id: str
+    name: str
+    slug: str
+    evolution_instance: str
+    active: bool
+    config: dict
+    soul_prompt: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TenantConfig(BaseModel):
+    """Configuração completa de um tenant para injeção no agente."""
+    tenant_id: str
+    name: str
+    slug: str
+    evolution_instance: str
+    soul_prompt: str
+    medicos: list = []
+    convenios: list = []
+    horarios: dict = {}
+    endereco: dict = {}
+    regras_negocio: dict = {}
+    telefone: str = ""
+    whatsapp_gestor: str = ""
+
+
+class HealthResponse(BaseModel):
+    status: str = "healthy"
+    service: str = "paperclip"
+    version: str = "1.0.0"
+    tenants_count: int = 0
+
+
+# ─── App Lifecycle ─────────────────────────────────────────────
 @asynccontextmanager
-async def lifespan(app:FastAPI):
+async def lifespan(app: FastAPI):
+    """Cria tabelas no startup."""
     Base.metadata.create_all(bind=engine)
     yield
 
-app=FastAPI(title="Paperclip - Kairos Control Plane",version="1.0.0",lifespan=lifespan)
-app.add_middleware(CORSMiddleware,allow_origins=["*"],allow_credentials=True,allow_methods=["*"],allow_headers=["*"])
 
+# ─── FastAPI App ───────────────────────────────────────────────
+app = FastAPI(
+    title="Paperclip — Kairós Control Plane",
+    description="API de governança multi-tenant para o ecossistema Kairós Intelligence",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# ─── Dependencies ──────────────────────────────────────────────
 def get_db():
-    db=SessionLocal()
-    try:yield db
-    finally:db.close()
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-def _resp(t):
-    c=json.loads(t.config_json)if t.config_json else{}
-    return TenantResponse(id=t.id,name=t.name,slug=t.slug,evolution_instance=t.evolution_instance,active=t.active,config=c,soul_prompt=t.soul_prompt or"",created_at=t.created_at,updated_at=t.updated_at)
 
-@app.get("/health")
-def health(db:Session=Depends(get_db)):
-    return{"status":"healthy","service":"paperclip","tenants":db.query(TenantDB).count()}
+# ─── Routes ────────────────────────────────────────────────────
 
-@app.post("/api/tenants",response_model=TenantResponse,status_code=201)
-def create_tenant(t:TenantCreate,db:Session=Depends(get_db)):
-    if db.query(TenantDB).filter(TenantDB.slug==t.slug).first():raise HTTPException(409,"Tenant ja existe")
-    o=TenantDB(name=t.name,slug=t.slug,evolution_instance=t.evolution_instance,config_json=json.dumps(t.config,ensure_ascii=False),soul_prompt=t.soul_prompt)
-    db.add(o);db.commit();db.refresh(o)
-    return _resp(o)
+@app.get("/health", response_model=HealthResponse, tags=["System"])
+def health_check(db: Session = Depends(get_db)):
+    """Health check do serviço."""
+    count = db.query(TenantDB).count()
+    return HealthResponse(tenants_count=count)
 
-@app.get("/api/tenants",response_model=list[TenantResponse])
-def list_tenants(active_only:bool=True,db:Session=Depends(get_db)):
-    q=db.query(TenantDB)
-    if active_only:q=q.filter(TenantDB.active==True)
-    return[_resp(t)for t in q.all()]
 
-@app.get("/api/tenants/{tid}",response_model=TenantResponse)
-def get_tenant(tid:str,db:Session=Depends(get_db)):
-    t=db.query(TenantDB).filter(TenantDB.id==tid).first()
-    if not t:raise HTTPException(404,"Nao encontrado")
-    return _resp(t)
+@app.post("/api/tenants", response_model=TenantResponse, status_code=201, tags=["Tenants"])
+def create_tenant(tenant: TenantCreate, db: Session = Depends(get_db)):
+    """Cadastrar nova clínica (tenant)."""
+    existing = db.query(TenantDB).filter(TenantDB.slug == tenant.slug).first()
+    if existing:
+        raise HTTPException(status_code=409, detail=f"Tenant '{tenant.slug}' já existe")
 
-@app.get("/api/tenants/by-instance/{inst}",response_model=TenantConfig)
-def get_by_instance(inst:str,db:Session=Depends(get_db)):
-    t=db.query(TenantDB).filter(TenantDB.evolution_instance==inst,TenantDB.active==True).first()
-    if not t:raise HTTPException(404,f"Sem tenant para '{inst}'")
-    c=json.loads(t.config_json)if t.config_json else{}
-    return TenantConfig(tenant_id=t.id,name=t.name,slug=t.slug,evolution_instance=t.evolution_instance,soul_prompt=t.soul_prompt,medicos=c.get("medicos",[]),convenios=c.get("convenios",[]),horarios=c.get("horarios",{}),endereco=c.get("endereco",{}),regras_negocio=c.get("regras_negocio",{}),telefone=c.get("telefone",""),whatsapp_gestor=c.get("whatsapp_gestor",""))
+    db_tenant = TenantDB(
+        name=tenant.name,
+        slug=tenant.slug,
+        evolution_instance=tenant.evolution_instance,
+        config_json=json.dumps(tenant.config, ensure_ascii=False),
+        soul_prompt=tenant.soul_prompt,
+    )
+    db.add(db_tenant)
+    db.commit()
+    db.refresh(db_tenant)
+    return _to_response(db_tenant)
 
-@app.put("/api/tenants/{tid}",response_model=TenantResponse)
-def update_tenant(tid:str,u:TenantUpdate,db:Session=Depends(get_db)):
-    t=db.query(TenantDB).filter(TenantDB.id==tid).first()
-    if not t:raise HTTPException(404,"Nao encontrado")
-    if u.name is not None:t.name=u.name
-    if u.active is not None:t.active=u.active
-    if u.config is not None:t.config_json=json.dumps(u.config,ensure_ascii=False)
-    if u.soul_prompt is not None:t.soul_prompt=u.soul_prompt
-    db.commit();db.refresh(t)
-    return _resp(t)
 
-@app.delete("/api/tenants/{tid}",status_code=204)
-def delete_tenant(tid:str,db:Session=Depends(get_db)):
-    t=db.query(TenantDB).filter(TenantDB.id==tid).first()
-    if not t:raise HTTPException(404,"Nao encontrado")
-    t.active=False;db.commit()
+@app.get("/api/tenants", response_model=list[TenantResponse], tags=["Tenants"])
+def list_tenants(active_only: bool = True, db: Session = Depends(get_db)):
+    """Listar todas as clínicas cadastradas."""
+    query = db.query(TenantDB)
+    if active_only:
+        query = query.filter(TenantDB.active == True)
+    tenants = query.all()
+    return [_to_response(t) for t in tenants]
+
+
+@app.get("/api/tenants/{tenant_id}", response_model=TenantResponse, tags=["Tenants"])
+def get_tenant(tenant_id: str, db: Session = Depends(get_db)):
+    """Buscar tenant por ID."""
+    tenant = db.query(TenantDB).filter(TenantDB.id == tenant_id).first()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant não encontrado")
+    return _to_response(tenant)
+
+
+@app.get("/api/tenants/by-instance/{instance_name}", response_model=TenantConfig, tags=["Tenants"])
+def get_tenant_by_instance(instance_name: str, db: Session = Depends(get_db)):
+    """
+    Buscar configuração completa do tenant pela instância Evolution Go.
+    Este é o endpoint principal usado pelo TenantResolver dos agentes.
+    """
+    tenant = db.query(TenantDB).filter(
+        TenantDB.evolution_instance == instance_name,
+        TenantDB.active == True,
+    ).first()
+    if not tenant:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Nenhum tenant ativo para instância '{instance_name}'"
+        )
+    config = json.loads(tenant.config_json) if tenant.config_json else {}
+    return TenantConfig(
+        tenant_id=tenant.id,
+        name=tenant.name,
+        slug=tenant.slug,
+        evolution_instance=tenant.evolution_instance,
+        soul_prompt=tenant.soul_prompt,
+        medicos=config.get("medicos", []),
+        convenios=config.get("convenios", []),
+        horarios=config.get("horarios", {}),
+        endereco=config.get("endereco", {}),
+        regras_negocio=config.get("regras_negocio", {}),
+        telefone=config.get("telefone", ""),
+        whatsapp_gestor=config.get("whatsapp_gestor", ""),
+    )
+
+
+@app.put("/api/tenants/{tenant_id}", response_model=TenantResponse, tags=["Tenants"])
+def update_tenant(tenant_id: str, update: TenantUpdate, db: Session = Depends(get_db)):
+    """Atualizar configuração de uma clínica."""
+    tenant = db.query(TenantDB).filter(TenantDB.id == tenant_id).first()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant não encontrado")
+
+    if update.name is not None:
+        tenant.name = update.name
+    if update.active is not None:
+        tenant.active = update.active
+    if update.config is not None:
+        tenant.config_json = json.dumps(update.config, ensure_ascii=False)
+    if update.soul_prompt is not None:
+        tenant.soul_prompt = update.soul_prompt
+
+    db.commit()
+    db.refresh(tenant)
+    return _to_response(tenant)
+
+
+@app.delete("/api/tenants/{tenant_id}", status_code=204, tags=["Tenants"])
+def delete_tenant(tenant_id: str, db: Session = Depends(get_db)):
+    """Desativar tenant (soft delete)."""
+    tenant = db.query(TenantDB).filter(TenantDB.id == tenant_id).first()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant não encontrado")
+    tenant.active = False
+    db.commit()
+
+
+# ─── Helpers ───────────────────────────────────────────────────
+def _to_response(tenant: TenantDB) -> TenantResponse:
+    config = json.loads(tenant.config_json) if tenant.config_json else {}
+    return TenantResponse(
+        id=tenant.id,
+        name=tenant.name,
+        slug=tenant.slug,
+        evolution_instance=tenant.evolution_instance,
+        active=tenant.active,
+        config=config,
+        soul_prompt=tenant.soul_prompt or "",
+        created_at=tenant.created_at,
+        updated_at=tenant.updated_at,
+    )
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=3000)

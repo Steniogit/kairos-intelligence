@@ -1,0 +1,197 @@
+/* ============================================================
+   ClinicasPage — Estilos com skeleton loading + context menu
+   ============================================================ */
+
+.clinicas-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-space-lg);
+}
+
+.clinicas-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--k-space-md);
+}
+
+.clinicas-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* Toolbar */
+.clinicas-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-md);
+  flex-wrap: wrap;
+}
+
+.clinicas-search {
+  position: relative;
+  flex: 1;
+  min-width: 240px;
+  max-width: 500px;
+}
+.clinicas-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--k-text-muted);
+  pointer-events: none;
+}
+.clinicas-search .k-input {
+  padding-left: 42px;
+}
+
+.clinicas-filter-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-xs);
+  cursor: pointer;
+  color: var(--k-text-secondary);
+  user-select: none;
+}
+.clinicas-filter-toggle input {
+  accent-color: var(--k-accent);
+  width: 16px;
+  height: 16px;
+}
+
+/* Stats */
+.clinicas-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--k-space-md);
+}
+
+/* Grid */
+.clinicas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: var(--k-space-md);
+}
+
+/* Skeleton grid */
+.clinicas-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: var(--k-space-md);
+}
+.clinica-card-skeleton {
+  background: var(--k-bg-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-lg);
+  padding: var(--k-space-lg);
+  min-height: 120px;
+}
+
+/* Card */
+.clinica-card {
+  background: var(--k-bg-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-lg);
+  padding: var(--k-space-lg);
+  cursor: pointer;
+  transition: all var(--k-transition-normal);
+  position: relative;
+}
+.clinica-card:hover {
+  border-color: rgba(139, 92, 246, 0.3);
+  box-shadow: var(--k-shadow-md);
+  transform: translateY(-2px);
+}
+.clinica-card--inactive {
+  opacity: 0.55;
+}
+.clinica-card--inactive:hover {
+  opacity: 0.8;
+}
+
+.clinica-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--k-space-md);
+}
+.clinica-card-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.clinica-card-slug {
+  font-size: 0.8rem;
+  color: var(--k-text-muted);
+  font-family: var(--k-font-mono);
+}
+
+.clinica-card-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-xs);
+  position: relative;
+}
+
+.clinica-menu-btn {
+  width: 32px !important;
+  height: 32px !important;
+}
+
+/* Context Menu */
+.clinica-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--k-bg-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-md);
+  box-shadow: var(--k-shadow-lg);
+  min-width: 160px;
+  z-index: 50;
+  padding: 4px;
+  animation: fadeIn 150ms ease-out;
+}
+.clinica-menu button {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  color: var(--k-text-primary);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background var(--k-transition-fast);
+  font-family: var(--k-font);
+}
+.clinica-menu button:hover {
+  background: var(--k-bg-elevated);
+}
+.clinica-menu-danger {
+  color: var(--k-danger) !important;
+}
+.clinica-menu-danger:hover {
+  background: var(--k-danger-bg) !important;
+}
+
+/* Card Body */
+.clinica-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-space-xs);
+}
+.clinica-card-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-xs);
+  font-size: 0.8125rem;
+  color: var(--k-text-secondary);
+}
+.clinica-card-meta--premium {
+  color: var(--k-gold);
+}

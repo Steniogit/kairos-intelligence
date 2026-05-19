@@ -1,0 +1,39 @@
+/* ============================================================
+   ConfirmModal — Estilos adicionais
+   ============================================================ */
+
+.confirm-modal {
+  max-width: 440px;
+}
+
+.confirm-modal-title {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+}
+
+.confirm-modal-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--k-radius-md);
+  flex-shrink: 0;
+}
+
+.confirm-modal-message {
+  font-size: 0.9rem;
+  color: var(--k-text-secondary);
+  line-height: 1.6;
+}
+
+/* Warning button variant */
+.k-btn-warning {
+  background: var(--k-warning);
+  color: var(--k-text-inverse);
+}
+.k-btn-warning:hover:not(:disabled) {
+  background: #d97706;
+  transform: translateY(-1px);
+}

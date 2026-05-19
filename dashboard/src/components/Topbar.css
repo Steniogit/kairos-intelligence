@@ -1,0 +1,118 @@
+/* ============================================================
+   Topbar.css — Estilos da barra superior
+   ============================================================ */
+
+.k-topbar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: var(--k-sidebar-width);
+  height: var(--k-topbar-height);
+  background: rgba(17, 24, 39, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--k-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--k-space-lg);
+  z-index: 50;
+  transition: left var(--k-transition-normal);
+}
+
+.k-sidebar--collapsed ~ .k-main-wrapper .k-topbar,
+.k-sidebar--collapsed + .k-main-wrapper .k-topbar {
+  left: var(--k-sidebar-collapsed);
+}
+
+.k-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-md);
+}
+
+.k-topbar-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--k-text-primary);
+}
+
+.k-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+}
+
+/* ── System Status ─── */
+.k-topbar-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: var(--k-success-bg);
+  border-radius: var(--k-radius-full);
+  color: var(--k-success);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.k-status-online { color: var(--k-success); }
+.k-status-offline { color: var(--k-danger); }
+
+/* ── Notifications ─── */
+.k-topbar-notif {
+  position: relative;
+}
+
+.k-topbar-notif-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background: var(--k-danger);
+  border-radius: 50%;
+  border: 2px solid var(--k-bg-secondary);
+}
+
+/* ── Profile ─── */
+.k-topbar-profile {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+  padding: 6px 12px;
+  border-radius: var(--k-radius-md);
+  cursor: pointer;
+  transition: background var(--k-transition-fast);
+  margin-left: var(--k-space-sm);
+}
+
+.k-topbar-profile:hover {
+  background: var(--k-bg-card);
+}
+
+.k-topbar-avatar {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--k-accent), #7c3aed);
+  border-radius: var(--k-radius-full);
+  color: white;
+}
+
+.k-topbar-user {
+  display: flex;
+  flex-direction: column;
+}
+
+.k-topbar-user-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--k-text-primary);
+}
+
+.k-topbar-user-role {
+  font-size: 0.6875rem;
+  color: var(--k-text-muted);
+}

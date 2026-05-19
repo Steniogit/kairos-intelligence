@@ -1,0 +1,296 @@
+/* ============================================================
+   LaboratorioPage.css — Estilos do chat com o Prometheus
+   ============================================================ */
+
+.lab-page {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--k-topbar-height) - var(--k-space-xl) * 2);
+  background: var(--k-bg-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-xl);
+  overflow: hidden;
+}
+
+/* ── Header ─── */
+.lab-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--k-space-md) var(--k-space-lg);
+  border-bottom: 1px solid var(--k-border);
+  background: var(--k-bg-secondary);
+}
+
+.lab-header-info {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+}
+
+.lab-header-avatar {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--k-gold), #d97706);
+  border-radius: var(--k-radius-md);
+  color: white;
+}
+
+.lab-header-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.lab-status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--k-success);
+  border-radius: 50%;
+}
+
+/* ── Messages ─── */
+.lab-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--k-space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-space-md);
+}
+
+.lab-message {
+  display: flex;
+  gap: var(--k-space-sm);
+  max-width: 85%;
+  animation: slideUp var(--k-transition-normal) ease-out;
+}
+
+.lab-message--user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.lab-message-avatar {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--k-radius-full);
+  flex-shrink: 0;
+}
+
+.lab-message--assistant .lab-message-avatar {
+  background: linear-gradient(135deg, var(--k-gold), #d97706);
+  color: white;
+}
+
+.lab-message--user .lab-message-avatar {
+  background: linear-gradient(135deg, var(--k-accent), #7c3aed);
+  color: white;
+}
+
+.lab-message-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lab-message--assistant .lab-message-content {
+  background: var(--k-bg-elevated);
+  border: 1px solid var(--k-border);
+  border-radius: 4px var(--k-radius-lg) var(--k-radius-lg) var(--k-radius-lg);
+  padding: 12px 16px;
+}
+
+.lab-message--user .lab-message-content {
+  background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(124,58,237,0.2));
+  border: 1px solid rgba(139,92,246,0.3);
+  border-radius: var(--k-radius-lg) 4px var(--k-radius-lg) var(--k-radius-lg);
+  padding: 12px 16px;
+}
+
+.lab-message-header {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+}
+
+.lab-message-sender {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--k-text-secondary);
+}
+
+.lab-message-time {
+  font-size: 0.6875rem;
+  color: var(--k-text-muted);
+}
+
+.lab-message-text {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--k-text-primary);
+  white-space: pre-wrap;
+}
+
+.lab-message-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.lab-message-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: var(--k-info-bg);
+  color: var(--k-info);
+  border-radius: var(--k-radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* ── Typing Indicator ─── */
+.lab-typing {
+  display: flex;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+.lab-typing span {
+  width: 8px;
+  height: 8px;
+  background: var(--k-text-muted);
+  border-radius: 50%;
+  animation: typing 1.4s infinite ease-in-out;
+}
+
+.lab-typing span:nth-child(2) { animation-delay: 0.2s; }
+.lab-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+/* ── Attachments Preview ─── */
+.lab-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--k-space-xs);
+  padding: var(--k-space-sm) var(--k-space-lg);
+  border-top: 1px solid var(--k-border);
+  background: var(--k-bg-secondary);
+}
+
+.lab-attachment {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--k-bg-elevated);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-sm);
+  font-size: 0.75rem;
+  color: var(--k-text-secondary);
+}
+
+.lab-attachment button {
+  background: none;
+  border: none;
+  color: var(--k-text-muted);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+}
+
+.lab-attachment button:hover {
+  color: var(--k-danger);
+}
+
+/* ── Input Area ─── */
+.lab-input-area {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--k-space-sm);
+  padding: var(--k-space-md) var(--k-space-lg);
+  border-top: 1px solid var(--k-border);
+  background: var(--k-bg-secondary);
+}
+
+.lab-input-attach {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-md);
+  color: var(--k-text-muted);
+  cursor: pointer;
+  transition: all var(--k-transition-fast);
+  flex-shrink: 0;
+}
+
+.lab-input-attach:hover {
+  border-color: var(--k-accent);
+  color: var(--k-accent);
+}
+
+.lab-input-text {
+  flex: 1;
+  padding: 10px 14px;
+  font-family: var(--k-font);
+  font-size: 0.875rem;
+  color: var(--k-text-primary);
+  background: var(--k-bg-input);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-md);
+  outline: none;
+  resize: none;
+  min-height: 40px;
+  max-height: 120px;
+  line-height: 1.4;
+  transition: border-color var(--k-transition-fast);
+}
+
+.lab-input-text:focus {
+  border-color: var(--k-accent);
+}
+
+.lab-input-text::placeholder {
+  color: var(--k-text-muted);
+}
+
+.lab-input-send {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, var(--k-accent), #7c3aed);
+  border: none;
+  border-radius: var(--k-radius-md);
+  color: white;
+  cursor: pointer;
+  transition: all var(--k-transition-fast);
+  flex-shrink: 0;
+}
+
+.lab-input-send:hover:not(:disabled) {
+  box-shadow: 0 4px 12px var(--k-accent-glow);
+  transform: translateY(-1px);
+}
+
+.lab-input-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

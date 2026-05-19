@@ -1,0 +1,382 @@
+/* ============================================================
+   ConfiguracoesPage (Command Center) — Styles
+   ============================================================ */
+
+.config-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-space-xl);
+}
+
+.config-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--k-space-md);
+}
+
+.config-title {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.config-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-md);
+}
+
+.config-global-status {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-xs);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: var(--k-radius-full);
+}
+.config-global-online {
+  background: var(--k-success-bg);
+  color: var(--k-success);
+}
+.config-global-alert {
+  background: var(--k-warning-bg);
+  color: var(--k-warning);
+}
+
+/* Sections */
+.config-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-space-md);
+}
+.config-section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* Cards Grid */
+.config-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: var(--k-space-md);
+}
+.config-cards-grid--infra {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+/* Service Card */
+.config-service-card {
+  background: var(--k-bg-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-lg);
+  padding: var(--k-space-md) var(--k-space-lg);
+  transition: all var(--k-transition-normal);
+}
+.config-service-card:hover {
+  border-color: rgba(139, 92, 246, 0.2);
+  box-shadow: var(--k-shadow-sm);
+}
+.config-service-card--alert {
+  border-color: rgba(239, 68, 68, 0.3);
+}
+.config-service-card--compact {
+  padding: var(--k-space-md);
+}
+
+.config-service-header {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+}
+
+.config-service-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--k-radius-md);
+  background: var(--k-bg-elevated);
+  color: var(--k-text-secondary);
+  flex-shrink: 0;
+}
+.config-service-icon--provider {
+  background: var(--k-accent-glow);
+  color: var(--k-accent);
+}
+
+.config-service-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.config-service-info strong {
+  font-size: 0.9rem;
+}
+.config-service-model {
+  font-size: 0.75rem;
+  color: var(--k-accent);
+  font-family: var(--k-font-mono);
+}
+.config-service-version {
+  font-size: 0.75rem;
+  color: var(--k-text-muted);
+  font-family: var(--k-font-mono);
+}
+
+.config-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.config-service-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: var(--k-space-sm);
+  padding-top: var(--k-space-sm);
+  border-top: 1px solid var(--k-border);
+}
+
+.config-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--k-text-secondary);
+}
+.config-detail-row code {
+  color: var(--k-text-muted);
+  font-family: var(--k-font-mono);
+  font-size: 0.8rem;
+}
+
+.config-service-meta {
+  font-size: 0.8rem;
+  color: var(--k-text-muted);
+  margin-top: 6px;
+}
+
+/* Prometheus Form */
+.config-prometheus-form {
+  background: var(--k-bg-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-lg);
+  padding: var(--k-space-lg);
+}
+
+/* ─── Section Badge (Reasoning Health) ────────────────────── */
+.config-section-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: var(--k-accent-glow);
+  color: var(--k-accent);
+  padding: 2px 8px;
+  border-radius: var(--k-radius-full);
+  margin-left: 8px;
+}
+
+.config-section--reasoning {
+  background: var(--k-bg-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-lg);
+  padding: var(--k-space-lg);
+}
+
+/* Health Badge */
+.config-health-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--health-color);
+  background: color-mix(in srgb, var(--health-color) 12%, transparent);
+  padding: 3px 10px;
+  border-radius: var(--k-radius-full);
+}
+
+/* ─── Reasoning Health Table ───────────────────────────────── */
+.reasoning-table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--k-radius-md);
+  border: 1px solid var(--k-border);
+}
+
+.reasoning-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.reasoning-table thead {
+  background: var(--k-bg-elevated);
+}
+
+.reasoning-table th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--k-text-muted);
+  border-bottom: 1px solid var(--k-border);
+  white-space: nowrap;
+}
+
+.reasoning-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--k-border);
+  vertical-align: middle;
+}
+
+.reasoning-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.reasoning-table tbody tr:hover {
+  background: rgba(139, 92, 246, 0.04);
+}
+
+/* Row status indicators */
+.reasoning-row--critical {
+  background: rgba(239, 68, 68, 0.04);
+}
+.reasoning-row--critical:hover {
+  background: rgba(239, 68, 68, 0.08) !important;
+}
+.reasoning-row--warning {
+  background: rgba(245, 158, 11, 0.03);
+}
+
+/* Agent name */
+.reasoning-agent-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+/* Tenant slug */
+.reasoning-tenant {
+  font-family: var(--k-font-mono);
+  font-size: 0.78rem;
+  color: var(--k-text-secondary);
+  background: var(--k-bg-elevated);
+  padding: 2px 8px;
+  border-radius: var(--k-radius-sm);
+}
+
+/* Numbers */
+.reasoning-number {
+  text-align: center;
+  font-family: var(--k-font-mono);
+  font-weight: 600;
+}
+
+/* Success Rate Bar */
+.reasoning-rate-bar {
+  position: relative;
+  width: 100%;
+  min-width: 100px;
+  height: 20px;
+  background: var(--k-bg-elevated);
+  border-radius: var(--k-radius-full);
+  overflow: hidden;
+}
+
+.reasoning-rate-fill {
+  height: 100%;
+  border-radius: var(--k-radius-full);
+  transition: width 1s ease-out, background 0.5s ease;
+}
+
+.reasoning-rate-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--k-text-primary);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Failures & Loops */
+.reasoning-failures {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--k-danger);
+  font-weight: 600;
+}
+
+.reasoning-loops {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--k-warning);
+  font-weight: 600;
+}
+
+.reasoning-ok {
+  color: var(--k-text-muted);
+}
+
+/* Error message */
+.reasoning-error-msg {
+  font-family: var(--k-font-mono);
+  font-size: 0.72rem;
+  color: var(--k-danger);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+/* Empty state */
+.reasoning-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--k-space-sm);
+  padding: var(--k-space-xl);
+  color: var(--k-text-muted);
+}
+.reasoning-empty p {
+  font-weight: 600;
+  color: var(--k-text-secondary);
+}
+
+@media (max-width: 768px) {
+  .config-cards-grid,
+  .config-cards-grid--infra {
+    grid-template-columns: 1fr;
+  }
+  .config-header {
+    flex-direction: column;
+  }
+  .reasoning-table {
+    font-size: 0.78rem;
+  }
+  .reasoning-table th,
+  .reasoning-table td {
+    padding: 8px 10px;
+  }
+}
+

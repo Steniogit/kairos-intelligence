@@ -1,0 +1,51 @@
+/* ============================================================
+   App.css — Layout principal (Sidebar + Content area)
+   ============================================================ */
+
+.k-app {
+  display: flex;
+  min-height: 100vh;
+}
+
+.k-main-wrapper {
+  flex: 1;
+  margin-left: var(--k-sidebar-width);
+  transition: margin-left var(--k-transition-normal);
+  display: flex;
+  flex-direction: column;
+}
+
+.k-app--collapsed .k-main-wrapper {
+  margin-left: var(--k-sidebar-collapsed);
+}
+
+.k-app--collapsed .k-topbar {
+  left: var(--k-sidebar-collapsed);
+}
+
+.k-main {
+  flex: 1;
+  padding: var(--k-space-xl);
+  padding-top: calc(var(--k-topbar-height) + var(--k-space-xl));
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ── Responsive ─── */
+@media (max-width: 1024px) {
+  .k-sidebar {
+    transform: translateX(-100%);
+  }
+  .k-sidebar:not(.k-sidebar--collapsed) {
+    transform: translateX(0);
+    position: fixed;
+    z-index: 200;
+  }
+  .k-main-wrapper {
+    margin-left: 0 !important;
+  }
+  .k-topbar {
+    left: 0 !important;
+  }
+}
