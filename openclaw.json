@@ -29,7 +29,34 @@
     "list": [
       {
         "id": "main",
-        "name": "main"
+        "name": "main",
+        "agentDir": "/data/agents/main",
+        "default": true
+      },
+      {
+        "id": "front-desk",
+        "name": "front-desk",
+        "agentDir": "/data/agents/front-desk"
+      },
+      {
+        "id": "manager",
+        "name": "manager",
+        "agentDir": "/data/agents/manager"
+      },
+      {
+        "id": "notifications",
+        "name": "notifications",
+        "agentDir": "/data/agents/notifications"
+      },
+      {
+        "id": "prometheus",
+        "name": "prometheus",
+        "agentDir": "/data/agents/prometheus"
+      },
+      {
+        "id": "synchronizer",
+        "name": "synchronizer",
+        "agentDir": "/data/agents/synchronizer"
       }
     ],
     "defaults": {
