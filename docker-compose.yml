@@ -71,7 +71,7 @@ services:
   # OPENCLAW — Orquestrador de Agentes (Projeto)
   # ─────────────────────────────────────────────
   openclaw:
-    image: ghcr.io/hostinger/hvps-openclaw:2026.5.15
+    image: ghcr.io/hostinger/hvps-openclaw:latest
     container_name: kairos-openclaw
     init: true
     restart: unless-stopped
