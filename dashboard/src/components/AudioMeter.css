@@ -1,0 +1,114 @@
+/* ============================================================
+   AudioMeter — Medidor de nível de áudio em tempo real
+   Prefixo: .audio-meter
+   ============================================================ */
+
+.audio-meter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-space-xs);
+}
+
+/* ── Rótulo ─── */
+.audio-meter__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--k-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Container da barra + dB ─── */
+.audio-meter__bar-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+}
+
+/* ── Track (fundo da barra) ─── */
+.audio-meter__track {
+  flex: 1;
+  background: var(--k-bg-input);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-full);
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Tamanhos ─── */
+.audio-meter--sm .audio-meter__track {
+  height: 6px;
+}
+.audio-meter--md .audio-meter__track {
+  height: 10px;
+}
+.audio-meter--lg .audio-meter__track {
+  height: 16px;
+}
+
+/* ── Fill (barra de nível) ─── */
+.audio-meter__fill {
+  height: 100%;
+  min-width: 0;
+  border-radius: var(--k-radius-full);
+  transition: width 80ms linear, background 200ms ease;
+  will-change: width;
+}
+
+/* Gradientes de cor por nível */
+.audio-meter__fill--normal {
+  background: linear-gradient(90deg, #10b981, #34d399);
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.3);
+}
+
+.audio-meter__fill--moderate {
+  background: linear-gradient(90deg, #10b981, #f59e0b);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+}
+
+.audio-meter__fill--loud {
+  background: linear-gradient(90deg, #f59e0b, #ef4444);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.35);
+}
+
+/* ── Valor em dB ─── */
+.audio-meter__db {
+  font-family: var(--k-font-mono);
+  font-weight: 600;
+  color: var(--k-text-secondary);
+  white-space: nowrap;
+  min-width: 52px;
+  text-align: right;
+}
+
+.audio-meter--sm .audio-meter__db {
+  font-size: 0.6875rem;
+  min-width: 44px;
+}
+.audio-meter--md .audio-meter__db {
+  font-size: 0.75rem;
+}
+.audio-meter--lg .audio-meter__db {
+  font-size: 0.875rem;
+  min-width: 60px;
+}
+
+/* ── Estado inativo ─── */
+.audio-meter--inactive .audio-meter__track {
+  opacity: 0.5;
+}
+
+.audio-meter--inactive .audio-meter__db {
+  color: var(--k-text-muted);
+}
+
+/* ── Indicador de clipping (vermelho) ─── */
+.audio-meter__db--clip {
+  color: var(--k-danger) !important;
+  animation: audio-meter-blink 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes audio-meter-blink {
+  from { opacity: 1; }
+  to { opacity: 0.5; }
+}

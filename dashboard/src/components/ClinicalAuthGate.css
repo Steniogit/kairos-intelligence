@@ -1,0 +1,207 @@
+/* ============================================================
+   ClinicalAuthGate.css — Tela de login do módulo clínico
+   ============================================================ */
+
+.clinical-auth-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - var(--k-topbar-height));
+  padding: var(--k-space-xl);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Background subtle grid pattern */
+.clinical-auth-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 25% 25%, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.clinical-auth-card {
+  position: relative;
+  background: var(--k-bg-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-xl);
+  padding: var(--k-space-2xl) var(--k-space-xl);
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+  animation: slideUp var(--k-transition-normal) ease-out;
+  overflow: hidden;
+}
+
+.clinical-auth-glow {
+  position: absolute;
+  top: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+  filter: blur(40px);
+}
+
+.clinical-auth-icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--k-space-md);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(20, 184, 166, 0.15));
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: var(--k-radius-lg);
+  color: #10b981;
+}
+
+.clinical-auth-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--k-text-primary);
+  margin-bottom: 6px;
+}
+
+.clinical-auth-subtitle {
+  font-size: 0.875rem;
+  color: var(--k-text-muted);
+  margin-bottom: var(--k-space-xl);
+  line-height: 1.5;
+}
+
+.clinical-auth-form {
+  text-align: left;
+}
+
+.clinical-auth-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--k-text-secondary);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.clinical-auth-input-wrapper {
+  position: relative;
+  margin-bottom: var(--k-space-md);
+}
+
+.clinical-auth-input {
+  padding-right: 40px !important;
+  font-size: 1rem !important;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.clinical-auth-input-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--k-text-muted);
+  pointer-events: none;
+}
+
+.clinical-auth-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: var(--k-danger-bg);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--k-radius-md);
+  color: var(--k-danger);
+  font-size: 0.8125rem;
+  margin-bottom: var(--k-space-md);
+  animation: fadeIn var(--k-transition-fast) ease-out;
+}
+
+.clinical-auth-btn {
+  width: 100%;
+  height: 48px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  gap: 8px;
+  background: linear-gradient(135deg, #10b981, #14b8a6) !important;
+  border: none !important;
+  margin-top: var(--k-space-sm);
+}
+
+.clinical-auth-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669, #0d9488) !important;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+}
+
+.clinical-auth-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.clinical-auth-footer {
+  font-size: 0.75rem;
+  color: var(--k-text-muted);
+  margin-top: var(--k-space-lg);
+  text-align: center;
+}
+
+/* ═══ Loading state ═══ */
+.clinical-auth-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: var(--k-text-muted);
+}
+
+/* ═══ User Badge (in-page indicator) ═══ */
+.clinical-user-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+  padding: 8px 14px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(20, 184, 166, 0.08));
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  border-radius: var(--k-radius-full);
+}
+
+.clinical-user-badge-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #10b981;
+  font-size: 0.8125rem;
+}
+
+.clinical-user-badge-name {
+  font-weight: 600;
+  color: var(--k-text-primary);
+}
+
+.clinical-user-badge-crm {
+  font-size: 0.75rem;
+  color: var(--k-text-muted);
+  font-family: var(--k-font-mono);
+}
+
+.clinical-user-logout {
+  color: var(--k-text-muted) !important;
+  margin-left: 4px;
+}
+
+.clinical-user-logout:hover {
+  color: var(--k-danger) !important;
+}
+.clinical-back-btn {
+  margin-bottom: 16px;
+  opacity: 0.8;
+}

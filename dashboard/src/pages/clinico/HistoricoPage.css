@@ -1,0 +1,355 @@
+/* ═══ Histórico de Atendimentos ═══════════════════════════════ */
+
+.historico-page {
+  padding: var(--k-space-xl) var(--k-space-lg);
+  max-width: 1000px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.historico-header {
+  margin-bottom: var(--k-space-lg);
+}
+
+.historico-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--k-text);
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+}
+
+.historico-subtitle {
+  font-size: 0.85rem;
+  color: var(--k-text-muted);
+  margin-top: var(--k-space-xs);
+}
+
+/* ─── Search ─────────────────────────────────────────────── */
+
+.historico-search {
+  display: flex;
+  gap: var(--k-space-sm);
+  margin-bottom: var(--k-space-lg);
+}
+
+.historico-search-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.historico-search-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--k-text-muted);
+  pointer-events: none;
+}
+
+.historico-search-input {
+  width: 100%;
+  padding: 10px 36px 10px 40px;
+  background: var(--k-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-md);
+  color: var(--k-text);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.historico-search-input:focus {
+  border-color: var(--k-accent);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.historico-search-clear {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  color: var(--k-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: color 0.2s;
+}
+
+.historico-search-clear:hover {
+  color: var(--k-text);
+}
+
+/* ─── Loading / Empty ────────────────────────────────────── */
+
+.historico-loading,
+.historico-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--k-space-md);
+  padding: var(--k-space-xl) 0;
+  color: var(--k-text-muted);
+}
+
+/* ─── List ───────────────────────────────────────────────── */
+
+.historico-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-space-xs);
+}
+
+.historico-item {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-md);
+  padding: var(--k-space-md) var(--k-space-lg);
+  background: var(--k-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.historico-item:hover {
+  border-color: var(--k-accent);
+  background: rgba(59, 130, 246, 0.04);
+  transform: translateX(2px);
+}
+
+.historico-item-left {
+  flex: 1;
+}
+
+.historico-item-name {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-xs);
+  font-weight: 600;
+  color: var(--k-text);
+  font-size: 0.9rem;
+}
+
+.historico-item-meta {
+  display: flex;
+  gap: var(--k-space-md);
+  margin-top: 2px;
+  font-size: 0.75rem;
+  color: var(--k-text-muted);
+}
+
+.historico-item-meta span {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.historico-item-right {
+  text-align: right;
+}
+
+.historico-item-date {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.8rem;
+  color: var(--k-text);
+  justify-content: flex-end;
+}
+
+.historico-item-doctor {
+  font-size: 0.75rem;
+  color: var(--k-text-muted);
+  margin-top: 2px;
+}
+
+.historico-item-arrow {
+  color: var(--k-text-muted);
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+.historico-item:hover .historico-item-arrow {
+  opacity: 1;
+  color: var(--k-accent);
+}
+
+/* ─── Pagination ─────────────────────────────────────────── */
+
+.historico-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--k-space-md);
+  margin-top: var(--k-space-lg);
+}
+
+.historico-page-info {
+  font-size: 0.8rem;
+  color: var(--k-text-muted);
+}
+
+/* ─── Detail ─────────────────────────────────────────────── */
+
+.historico-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-space-lg);
+}
+
+.historico-detail-patient {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-md);
+  padding: var(--k-space-lg);
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: var(--k-radius-lg);
+  color: var(--k-text);
+}
+
+.historico-detail-name {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.historico-detail-meta {
+  display: flex;
+  gap: var(--k-space-md);
+  margin-top: 2px;
+  font-size: 0.8rem;
+  color: var(--k-text-muted);
+}
+
+.historico-detail-info {
+  display: flex;
+  gap: var(--k-space-lg);
+  font-size: 0.85rem;
+  color: var(--k-text-muted);
+}
+
+.historico-detail-info div {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ─── SOAP Grid ──────────────────────────────────────────── */
+
+.historico-soap-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--k-space-md);
+}
+
+.historico-soap-card {
+  background: var(--k-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-md);
+  padding: var(--k-space-md);
+}
+
+.historico-soap-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--k-space-xs);
+}
+
+.historico-soap-content {
+  font-size: 0.85rem;
+  color: var(--k-text);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* ─── Transcript ─────────────────────────────────────────── */
+
+.historico-transcript h4,
+.historico-documents h4 {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: var(--k-space-sm);
+}
+
+.historico-transcript-body {
+  background: var(--k-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-md);
+  padding: var(--k-space-md);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  max-height: 300px;
+  overflow-y: auto;
+  color: var(--k-text-muted);
+}
+
+/* ─── Documents ──────────────────────────────────────────── */
+
+.historico-doc-card {
+  background: var(--k-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-md);
+  padding: var(--k-space-md);
+  margin-bottom: var(--k-space-sm);
+}
+
+.historico-doc-title {
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-bottom: var(--k-space-xs);
+  color: var(--k-accent);
+}
+
+.historico-doc-content {
+  font-size: 0.8rem;
+  color: var(--k-text);
+  white-space: pre-wrap;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* ─── Detail Loading ─────────────────────────────────────── */
+
+.historico-detail-loading {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  color: var(--k-accent);
+}
+
+/* ─── Responsive ─────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .historico-soap-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .historico-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .historico-item-right {
+    text-align: left;
+  }
+
+  .historico-detail-info {
+    flex-direction: column;
+    gap: var(--k-space-sm);
+  }
+}

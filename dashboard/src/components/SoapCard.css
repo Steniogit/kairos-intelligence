@@ -1,0 +1,282 @@
+/* ============================================================
+   SoapCard — Card SOAP com destaque de atualização
+   Prefixo: .soap-card
+   ============================================================ */
+
+/* ── Cores por seção ─── */
+:root {
+  --soap-subjective: #10b981;
+  --soap-subjective-bg: rgba(16, 185, 129, 0.08);
+  --soap-objective: #3b82f6;
+  --soap-objective-bg: rgba(59, 130, 246, 0.08);
+  --soap-assessment: #8b5cf6;
+  --soap-assessment-bg: rgba(139, 92, 246, 0.08);
+  --soap-plan: #f59e0b;
+  --soap-plan-bg: rgba(245, 158, 11, 0.08);
+}
+
+.soap-card {
+  background: var(--k-bg-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-lg);
+  overflow: hidden;
+  transition: border-color var(--k-transition-normal), box-shadow var(--k-transition-normal);
+}
+
+.soap-card:hover {
+  border-color: rgba(99, 115, 171, 0.25);
+}
+
+/* ── Borda esquerda colorida por seção ─── */
+.soap-card--subjective { border-left: 3px solid var(--soap-subjective); }
+.soap-card--objective  { border-left: 3px solid var(--soap-objective); }
+.soap-card--assessment { border-left: 3px solid var(--soap-assessment); }
+.soap-card--plan       { border-left: 3px solid var(--soap-plan); }
+
+/* ── Animação de atualização ─── */
+@keyframes glow-update {
+  0%   { border-color: var(--soap-glow-color, var(--k-success)); box-shadow: 0 0 12px var(--soap-glow-color, rgba(16, 185, 129, 0.3)); }
+  50%  { border-color: var(--soap-glow-color, var(--k-success)); box-shadow: 0 0 20px var(--soap-glow-color, rgba(16, 185, 129, 0.15)); }
+  100% { border-color: var(--k-border); box-shadow: none; }
+}
+
+.soap-card--updated {
+  animation: glow-update 1.5s ease-out forwards;
+}
+
+/* ── Cabeçalho ─── */
+.soap-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--k-space-md) var(--k-space-lg);
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--k-transition-fast);
+}
+
+.soap-card__header:hover {
+  background: var(--k-bg-card-hover);
+}
+
+.soap-card__header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+}
+
+.soap-card__icon-wrapper {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--k-radius-sm);
+}
+
+.soap-card--subjective .soap-card__icon-wrapper { background: var(--soap-subjective-bg); color: var(--soap-subjective); }
+.soap-card--objective  .soap-card__icon-wrapper { background: var(--soap-objective-bg);  color: var(--soap-objective); }
+.soap-card--assessment .soap-card__icon-wrapper { background: var(--soap-assessment-bg); color: var(--soap-assessment); }
+.soap-card--plan       .soap-card__icon-wrapper { background: var(--soap-plan-bg);       color: var(--soap-plan); }
+
+.soap-card__title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--k-text-primary);
+}
+
+.soap-card__section-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.soap-card--subjective .soap-card__section-label { color: var(--soap-subjective); }
+.soap-card--objective  .soap-card__section-label { color: var(--soap-objective); }
+.soap-card--assessment .soap-card__section-label { color: var(--soap-assessment); }
+.soap-card--plan       .soap-card__section-label { color: var(--soap-plan); }
+
+.soap-card__chevron {
+  color: var(--k-text-muted);
+  transition: transform var(--k-transition-fast);
+  flex-shrink: 0;
+}
+
+.soap-card__chevron--open {
+  transform: rotate(180deg);
+}
+
+/* ── Corpo (conteúdo colapsável) ─── */
+.soap-card__body {
+  padding: 0 var(--k-space-lg) var(--k-space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-space-md);
+  animation: soap-card-expand 250ms ease-out;
+}
+
+@keyframes soap-card-expand {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Campo individual ─── */
+.soap-card__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-space-xs);
+}
+
+.soap-card__field-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--k-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.soap-card__field-value {
+  font-size: 0.875rem;
+  color: var(--k-text-primary);
+  line-height: 1.6;
+}
+
+/* Destaque em campos alterados */
+.soap-card__field--changed .soap-card__field-value {
+  background: rgba(16, 185, 129, 0.08);
+  border-left: 2px solid var(--k-success);
+  padding-left: var(--k-space-sm);
+  border-radius: 0 var(--k-radius-sm) var(--k-radius-sm) 0;
+}
+
+/* ── Listas (arrays) ─── */
+.soap-card__list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-space-xs);
+}
+
+.soap-card__list-item {
+  font-size: 0.875rem;
+  color: var(--k-text-primary);
+  padding-left: var(--k-space-md);
+  position: relative;
+  line-height: 1.5;
+}
+
+.soap-card__list-item::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 8px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--k-text-muted);
+}
+
+/* ── Pills (array de tags) ─── */
+.soap-card__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--k-space-xs);
+}
+
+.soap-card__pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: var(--k-bg-elevated);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-full);
+  color: var(--k-text-secondary);
+}
+
+/* ── Medication card ─── */
+.soap-card__med {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+  padding: var(--k-space-sm) var(--k-space-md);
+  background: var(--k-bg-elevated);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-md);
+}
+
+.soap-card__med-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--k-text-primary);
+}
+
+.soap-card__med-detail {
+  font-size: 0.75rem;
+  color: var(--k-text-secondary);
+}
+
+.soap-card__med-dosage {
+  font-family: var(--k-font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--k-accent-hover);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* ── Campos editáveis ─── */
+.soap-card__textarea {
+  width: 100%;
+  padding: var(--k-space-sm) var(--k-space-md);
+  font-family: var(--k-font);
+  font-size: 0.875rem;
+  color: var(--k-text-primary);
+  background: var(--k-bg-input);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-md);
+  resize: vertical;
+  min-height: 60px;
+  line-height: 1.6;
+  outline: none;
+  transition: border-color var(--k-transition-fast), box-shadow var(--k-transition-fast);
+}
+
+.soap-card__textarea:focus {
+  border-color: var(--k-accent);
+  box-shadow: 0 0 0 3px var(--k-accent-glow);
+}
+
+.soap-card__input {
+  width: 100%;
+  padding: var(--k-space-sm) var(--k-space-md);
+  font-family: var(--k-font);
+  font-size: 0.875rem;
+  color: var(--k-text-primary);
+  background: var(--k-bg-input);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-md);
+  outline: none;
+  transition: border-color var(--k-transition-fast), box-shadow var(--k-transition-fast);
+}
+
+.soap-card__input:focus {
+  border-color: var(--k-accent);
+  box-shadow: 0 0 0 3px var(--k-accent-glow);
+}
+
+/* ── Vazio ─── */
+.soap-card__empty {
+  font-size: 0.8125rem;
+  color: var(--k-text-muted);
+  font-style: italic;
+  padding: var(--k-space-sm) 0;
+}

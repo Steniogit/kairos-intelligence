@@ -1,0 +1,1099 @@
+/* ============================================================
+   ConsultaPage.css — Estilos da Página de Consulta
+   Wizard de 4 etapas: Preflight → Consulta → Revisão → Documentos
+   Usa tema emerald/teal do módulo clínico
+   ============================================================ */
+
+/* ═══ Layout Principal ════════════════════════════════════════ */
+.consulta-page {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--k-topbar-height) - var(--k-space-xl));
+  min-height: 0;
+}
+
+.consulta-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--k-space-lg);
+  flex-shrink: 0;
+}
+
+.consulta-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-md);
+}
+
+.consulta-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--k-text-primary);
+}
+
+.consulta-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* ═══ Step 0: Pre-Flight ═════════════════════════════════════ */
+.consulta-preflight {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--k-space-2xl) var(--k-space-lg);
+  flex: 1;
+}
+
+.consulta-preflight-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--k-text-primary);
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.consulta-preflight-subtitle {
+  font-size: 0.875rem;
+  color: var(--k-text-secondary);
+  margin-bottom: var(--k-space-xl);
+  text-align: center;
+}
+
+.consulta-checks-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--k-space-md);
+  width: 100%;
+  max-width: 720px;
+  margin-bottom: var(--k-space-xl);
+}
+
+.consulta-check-card {
+  background: var(--k-bg-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-lg);
+  padding: var(--k-space-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-md);
+  opacity: 0;
+  transform: translateY(12px) scale(0.97);
+  transition: all 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.consulta-check-card.consulta-check-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.consulta-check-card.consulta-check-ok {
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.consulta-check-card.consulta-check-fail {
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.consulta-check-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--k-radius-md);
+  flex-shrink: 0;
+  transition: all var(--k-transition-normal);
+}
+
+.consulta-check-icon.pending {
+  background: var(--k-bg-elevated);
+  color: var(--k-text-muted);
+}
+
+.consulta-check-icon.checking {
+  background: rgba(139, 92, 246, 0.12);
+  color: var(--k-accent);
+}
+
+.consulta-check-icon.ok {
+  background: var(--k-success-bg);
+  color: var(--k-success);
+}
+
+.consulta-check-icon.fail {
+  background: var(--k-danger-bg);
+  color: var(--k-danger);
+}
+
+.consulta-check-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--k-text-primary);
+}
+
+.consulta-check-status {
+  font-size: 0.75rem;
+  color: var(--k-text-muted);
+  margin-top: 2px;
+}
+
+/* Mic Test */
+.consulta-mic-test {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--k-space-md);
+  margin-bottom: var(--k-space-xl);
+}
+
+.consulta-mic-test-label {
+  font-size: 0.8125rem;
+  color: var(--k-text-secondary);
+}
+
+/* Start Button Glow */
+.consulta-start-btn {
+  background: linear-gradient(135deg, #10b981, #14b8a6) !important;
+  color: white !important;
+  padding: 14px 36px !important;
+  font-size: 1rem !important;
+  border-radius: var(--k-radius-lg) !important;
+  box-shadow: 0 4px 24px rgba(16, 185, 129, 0.3) !important;
+  transition: all var(--k-transition-normal) !important;
+}
+
+.consulta-start-btn:hover:not(:disabled) {
+  box-shadow: 0 6px 32px rgba(16, 185, 129, 0.45) !important;
+  transform: translateY(-2px) !important;
+}
+
+@keyframes consultaGlow {
+  0%, 100% { box-shadow: 0 4px 24px rgba(16, 185, 129, 0.3); }
+  50% { box-shadow: 0 4px 40px rgba(16, 185, 129, 0.55); }
+}
+
+.consulta-start-btn.consulta-glow {
+  animation: consultaGlow 2s ease-in-out infinite;
+}
+
+.consulta-error-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+  background: var(--k-danger-bg);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--k-radius-md);
+  padding: var(--k-space-md) var(--k-space-lg);
+  color: var(--k-danger);
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: var(--k-space-md);
+}
+
+/* ═══ Step 1: Live Consultation ══════════════════════════════ */
+.consulta-live {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Top bar */
+.consulta-topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-lg);
+  padding: var(--k-space-sm) var(--k-space-lg);
+  background: var(--k-bg-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-lg);
+  margin-bottom: var(--k-space-md);
+  flex-shrink: 0;
+}
+
+.consulta-ws-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-xs);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--k-text-secondary);
+}
+
+.consulta-ws-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background var(--k-transition-fast);
+}
+
+.consulta-ws-dot.connected {
+  background: var(--k-success);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+.consulta-ws-dot.disconnected {
+  background: var(--k-danger);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+}
+
+.consulta-timer {
+  font-family: var(--k-font-mono);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--k-text-primary);
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-xs);
+}
+
+.consulta-silence-alert {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-xs);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--k-warning);
+  background: var(--k-warning-bg);
+  padding: 4px 10px;
+  border-radius: var(--k-radius-full);
+  animation: pulse 2s infinite;
+}
+
+.consulta-topbar-spacer {
+  flex: 1;
+}
+
+.consulta-audio-mini {
+  flex-shrink: 0;
+}
+
+/* Split Layout */
+.consulta-split {
+  display: flex;
+  gap: var(--k-space-md);
+  flex: 1;
+  min-height: 0;
+}
+
+.consulta-left {
+  flex: 0 0 60%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.consulta-right {
+  flex: 0 0 calc(40% - var(--k-space-md));
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-space-md);
+  min-height: 0;
+}
+
+/* Transcript area */
+.consulta-transcript {
+  flex: 1;
+  background: var(--k-bg-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-lg);
+  padding: var(--k-space-lg);
+  overflow-y: auto;
+  position: relative;
+}
+
+.consulta-transcript-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--k-text-muted);
+  text-align: center;
+  gap: var(--k-space-sm);
+}
+
+.consulta-transcript-empty-icon {
+  opacity: 0.3;
+  margin-bottom: var(--k-space-sm);
+}
+
+.consulta-transcript-line {
+  font-size: 0.9375rem;
+  line-height: 1.8;
+  color: var(--k-text-primary);
+  padding: var(--k-space-xs) 0;
+  animation: consultaFadeIn 400ms ease-out;
+}
+
+.consulta-transcript-line.interim {
+  color: var(--k-text-muted);
+  font-style: italic;
+}
+
+.consulta-transcript-line .consulta-timestamp {
+  font-family: var(--k-font-mono);
+  font-size: 0.6875rem;
+  color: var(--k-text-muted);
+  margin-right: var(--k-space-sm);
+  user-select: none;
+}
+
+@keyframes consultaFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* SOAP panel */
+.consulta-soap-panel {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--k-space-sm);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Suggestions panel */
+.consulta-suggestions {
+  background: var(--k-bg-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-lg);
+  padding: var(--k-space-md);
+  max-height: 200px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.consulta-suggestions-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--k-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--k-space-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-xs);
+}
+
+.consulta-suggestion-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--k-space-sm);
+  padding: var(--k-space-sm);
+  border-radius: var(--k-radius-sm);
+  transition: background var(--k-transition-fast);
+  animation: consultaFadeIn 300ms ease-out;
+}
+
+.consulta-suggestion-item:hover {
+  background: var(--k-bg-elevated);
+}
+
+.consulta-suggestion-text {
+  font-size: 0.8125rem;
+  color: var(--k-text-secondary);
+  flex: 1;
+  line-height: 1.4;
+}
+
+.consulta-suggestion-confidence {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  font-family: var(--k-font-mono);
+  padding: 2px 6px;
+  border-radius: var(--k-radius-sm);
+  flex-shrink: 0;
+}
+
+.consulta-suggestion-confidence.high {
+  background: var(--k-success-bg);
+  color: var(--k-success);
+}
+
+.consulta-suggestion-confidence.medium {
+  background: var(--k-warning-bg);
+  color: var(--k-warning);
+}
+
+.consulta-suggestion-confidence.low {
+  background: var(--k-danger-bg);
+  color: var(--k-danger);
+}
+
+.consulta-suggestions-empty {
+  font-size: 0.8125rem;
+  color: var(--k-text-muted);
+  text-align: center;
+  padding: var(--k-space-md);
+}
+
+/* Bottom Action Bar */
+.consulta-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--k-space-md) var(--k-space-lg);
+  background: var(--k-bg-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-lg);
+  margin-top: var(--k-space-md);
+  flex-shrink: 0;
+}
+
+.consulta-actions-left {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+}
+
+.consulta-actions-right {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+}
+
+.consulta-recording-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-xs);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.consulta-recording-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--k-danger);
+  animation: consultaRecPulse 1.5s infinite;
+}
+
+@keyframes consultaRecPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+  50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+}
+
+.consulta-recording-dot.paused {
+  animation: none;
+  background: var(--k-warning);
+}
+
+/* ═══ Step 2: SOAP Review ════════════════════════════════════ */
+.consulta-review {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--k-space-md) 0;
+  overflow-y: auto;
+}
+
+.consulta-review-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--k-text-primary);
+  margin-bottom: 4px;
+}
+
+.consulta-review-subtitle {
+  font-size: 0.875rem;
+  color: var(--k-text-secondary);
+  margin-bottom: var(--k-space-lg);
+}
+
+.consulta-review-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--k-space-md);
+  margin-bottom: var(--k-space-lg);
+}
+
+.consulta-review-card {
+  background: var(--k-bg-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-lg);
+  padding: var(--k-space-lg);
+  transition: all var(--k-transition-normal);
+}
+
+.consulta-review-card:hover {
+  border-color: rgba(139, 92, 246, 0.2);
+}
+
+.consulta-review-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+  margin-bottom: var(--k-space-md);
+}
+
+.consulta-review-card-letter {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 800;
+  border-radius: var(--k-radius-sm);
+  color: white;
+}
+
+.consulta-review-card-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--k-text-secondary);
+}
+
+.consulta-review-card textarea {
+  width: 100%;
+  min-height: 120px;
+  background: var(--k-bg-input);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-md);
+  padding: var(--k-space-md);
+  font-family: var(--k-font);
+  font-size: 0.875rem;
+  color: var(--k-text-primary);
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  transition: all var(--k-transition-fast);
+}
+
+.consulta-review-card textarea:focus {
+  border-color: var(--k-accent);
+  box-shadow: 0 0 0 3px var(--k-accent-glow);
+}
+
+.consulta-review-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--k-space-sm);
+}
+
+/* ═══ Step 3: Documents ══════════════════════════════════════ */
+.consulta-docs {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--k-space-md) 0;
+  overflow-y: auto;
+}
+
+.consulta-docs-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--k-text-primary);
+  margin-bottom: 4px;
+}
+
+.consulta-docs-subtitle {
+  font-size: 0.875rem;
+  color: var(--k-text-secondary);
+  margin-bottom: var(--k-space-lg);
+}
+
+.consulta-docs-types {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--k-space-md);
+  margin-bottom: var(--k-space-xl);
+}
+
+.consulta-doc-type {
+  background: var(--k-bg-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-lg);
+  padding: var(--k-space-lg);
+  cursor: pointer;
+  transition: all var(--k-transition-normal);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--k-space-md);
+}
+
+.consulta-doc-type:hover {
+  border-color: rgba(139, 92, 246, 0.3);
+  transform: translateY(-1px);
+}
+
+.consulta-doc-type.selected {
+  border-color: var(--k-accent);
+  background: rgba(139, 92, 246, 0.06);
+  box-shadow: 0 0 0 1px var(--k-accent);
+}
+
+.consulta-doc-checkbox {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--k-radius-sm);
+  border: 2px solid var(--k-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--k-transition-fast);
+  margin-top: 2px;
+}
+
+.consulta-doc-type.selected .consulta-doc-checkbox {
+  background: var(--k-accent);
+  border-color: var(--k-accent);
+  color: white;
+}
+
+.consulta-doc-type-info h4 {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--k-text-primary);
+  margin-bottom: 4px;
+}
+
+.consulta-doc-type-info p {
+  font-size: 0.75rem;
+  color: var(--k-text-muted);
+  line-height: 1.4;
+}
+
+.consulta-docs-generate {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-md);
+  margin-bottom: var(--k-space-xl);
+}
+
+.consulta-docs-count {
+  font-size: 0.8125rem;
+  color: var(--k-text-secondary);
+}
+
+/* Generated Documents */
+.consulta-generated {
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-space-md);
+}
+
+.consulta-generated-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--k-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+}
+
+.consulta-doc-card {
+  background: var(--k-bg-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-lg);
+  overflow: hidden;
+  transition: all var(--k-transition-normal);
+  animation: consultaFadeIn 400ms ease-out;
+}
+
+.consulta-doc-card:hover {
+  border-color: rgba(139, 92, 246, 0.2);
+  box-shadow: var(--k-shadow-md);
+}
+
+.consulta-doc-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--k-space-md) var(--k-space-lg);
+  background: var(--k-bg-secondary);
+  border-bottom: 1px solid var(--k-border);
+}
+
+.consulta-doc-card-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--k-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+}
+
+.consulta-doc-card-actions {
+  display: flex;
+  gap: var(--k-space-xs);
+}
+
+.consulta-doc-card-body {
+  padding: var(--k-space-lg);
+  font-size: 0.875rem;
+  color: var(--k-text-secondary);
+  line-height: 1.7;
+  white-space: pre-wrap;
+  font-family: var(--k-font);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* ═══ Reconnect Banner ═══════════════════════════════════════ */
+.consulta-reconnect {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--k-space-md);
+  padding: var(--k-space-md);
+  background: var(--k-warning-bg);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: var(--k-radius-md);
+  margin-bottom: var(--k-space-md);
+  animation: consultaFadeIn 300ms ease-out;
+}
+
+.consulta-reconnect-text {
+  font-size: 0.8125rem;
+  color: var(--k-warning);
+  font-weight: 500;
+}
+
+/* ═══ Responsive ═════════════════════════════════════════════ */
+@media (max-width: 1100px) {
+  .consulta-split {
+    flex-direction: column;
+  }
+  .consulta-left,
+  .consulta-right {
+    flex: none;
+    width: 100%;
+  }
+  .consulta-transcript {
+    min-height: 200px;
+    max-height: 300px;
+  }
+  .consulta-soap-panel {
+    max-height: 300px;
+  }
+  .consulta-review-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .consulta-checks-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .consulta-topbar {
+    flex-wrap: wrap;
+    gap: var(--k-space-sm);
+  }
+  .consulta-actions {
+    flex-direction: column;
+    gap: var(--k-space-sm);
+  }
+  .consulta-docs-types {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .consulta-checks-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ═══ Patient Selector ═══════════════════════════════════════ */
+
+.consulta-patient-selector {
+  margin-top: var(--k-space-lg);
+  padding: var(--k-space-lg);
+  background: var(--k-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-lg);
+  max-width: 560px;
+  width: 100%;
+}
+
+.consulta-patient-title {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--k-text);
+  margin-bottom: var(--k-space-md);
+}
+
+.consulta-patient-selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--k-space-md);
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: var(--k-radius-md);
+}
+
+.consulta-patient-name {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+  font-weight: 600;
+  color: var(--k-text);
+  font-size: 0.95rem;
+}
+
+.consulta-patient-details {
+  display: flex;
+  gap: var(--k-space-md);
+  margin-top: var(--k-space-xs);
+  font-size: 0.8rem;
+  color: var(--k-text-muted);
+}
+
+.consulta-patient-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.consulta-patient-search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--k-text-muted);
+  pointer-events: none;
+}
+
+.consulta-patient-input {
+  width: 100%;
+  padding: 10px 12px 10px 36px;
+  background: var(--k-bg);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-md);
+  color: var(--k-text);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.consulta-patient-input:focus {
+  border-color: var(--k-accent);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.consulta-patient-loading {
+  position: absolute;
+  right: 12px;
+  color: var(--k-accent);
+}
+
+.consulta-patient-results {
+  margin-top: var(--k-space-xs);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-md);
+  background: var(--k-card);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.consulta-patient-result-item {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--k-border);
+  color: var(--k-text);
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.consulta-patient-result-item:hover {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.consulta-patient-result-item:last-child {
+  border-bottom: none;
+}
+
+.consulta-patient-result-name {
+  font-weight: 600;
+  flex: 1;
+}
+
+.consulta-patient-result-cpf,
+.consulta-patient-result-sex,
+.consulta-patient-result-birth {
+  font-size: 0.75rem;
+  color: var(--k-text-muted);
+  padding: 2px 6px;
+  background: rgba(255,255,255,0.05);
+  border-radius: var(--k-radius-sm);
+}
+
+/* ═══ Document Preview Modal ═════════════════════════════════ */
+
+.consulta-preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: var(--k-space-lg);
+}
+
+.consulta-preview-modal {
+  background: var(--k-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-lg);
+  width: 100%;
+  max-width: 800px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  animation: consulta-modal-in 0.25s ease-out;
+}
+
+@keyframes consulta-modal-in {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.consulta-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--k-space-md) var(--k-space-lg);
+  border-bottom: 1px solid var(--k-border);
+}
+
+.consulta-preview-header h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--k-text);
+  margin: 0;
+}
+
+.consulta-preview-body {
+  flex: 1;
+  overflow: hidden;
+  padding: var(--k-space-md);
+  min-height: 300px;
+}
+
+.consulta-preview-textarea {
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+  background: var(--k-bg);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-md);
+  color: var(--k-text);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  padding: var(--k-space-md);
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.consulta-preview-textarea:focus {
+  border-color: var(--k-accent);
+}
+
+.consulta-preview-footer {
+  display: flex;
+  gap: var(--k-space-sm);
+  padding: var(--k-space-md) var(--k-space-lg);
+  border-top: 1px solid var(--k-border);
+  justify-content: flex-end;
+}
+
+/* ═══ Diarized Transcript ════════════════════════════════════ */
+
+.consulta-diarized {
+  margin-top: var(--k-space-lg);
+  padding-top: var(--k-space-md);
+  border-top: 2px solid rgba(59, 130, 246, 0.2);
+}
+
+.consulta-diarized-header {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--k-accent);
+  margin-bottom: var(--k-space-md);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.consulta-diarized-segment {
+  display: flex;
+  gap: var(--k-space-sm);
+  padding: 6px 10px;
+  border-radius: var(--k-radius-md);
+  margin-bottom: 4px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  transition: background 0.15s;
+}
+
+.consulta-diarized-segment.speaker-prof {
+  background: rgba(16, 185, 129, 0.06);
+  border-left: 3px solid #10b981;
+}
+
+.consulta-diarized-segment.speaker-patient {
+  background: rgba(59, 130, 246, 0.06);
+  border-left: 3px solid #3b82f6;
+}
+
+.consulta-diarized-badge {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+.speaker-prof .consulta-diarized-badge {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.speaker-patient .consulta-diarized-badge {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.consulta-diarized-text {
+  color: var(--k-text);
+}
+
+.consulta-diarized-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-sm);
+  padding: var(--k-space-md);
+  color: var(--k-accent);
+  font-size: 0.8rem;
+  font-weight: 600;
+}

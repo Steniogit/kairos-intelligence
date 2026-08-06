@@ -1,0 +1,195 @@
+/* ============================================================
+   ClinicoDashboard.css — Estilos do Dashboard Clínico
+   Tema Emerald/Teal para distinguir do dashboard principal
+   ============================================================ */
+
+.clinico-dashboard {
+  padding: 0;
+}
+
+/* ═══ Header ═══════════════════════════════════════════════ */
+.clinico-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: var(--k-space-lg);
+}
+
+.clinico-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--k-text-primary);
+  margin-bottom: 2px;
+}
+
+/* ═══ Hero Card ════════════════════════════════════════════ */
+.clinico-hero {
+  position: relative;
+  background: var(--k-bg-card);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  border-radius: var(--k-radius-xl);
+  padding: var(--k-space-xl);
+  margin-bottom: var(--k-space-lg);
+  overflow: hidden;
+  transition: all var(--k-transition-normal);
+}
+
+.clinico-hero:hover {
+  border-color: rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 24px rgba(16, 185, 129, 0.08);
+}
+
+.clinico-hero-glow {
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 240px;
+  height: 240px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+  filter: blur(30px);
+}
+
+.clinico-hero-content {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--k-space-lg);
+  position: relative;
+  z-index: 1;
+}
+
+.clinico-hero-icon {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #10b981, #14b8a6);
+  border-radius: var(--k-radius-lg);
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.25);
+}
+
+.clinico-hero-text {
+  flex: 1;
+}
+
+.clinico-hero-text h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--k-text-primary);
+  margin-bottom: 6px;
+}
+
+.clinico-hero-text p {
+  font-size: 0.875rem;
+  color: var(--k-text-secondary);
+  line-height: 1.6;
+  max-width: 600px;
+}
+
+.clinico-hero-status {
+  flex-shrink: 0;
+}
+
+/* ═══ Stats ════════════════════════════════════════════════ */
+.clinico-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--k-space-md);
+  margin-bottom: var(--k-space-xl);
+}
+
+/* ═══ Section Title ═══════════════════════════════════════ */
+.clinico-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--k-text-primary);
+  margin-bottom: var(--k-space-md);
+}
+
+/* ═══ Action Cards ════════════════════════════════════════ */
+.clinico-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--k-space-md);
+}
+
+.clinico-action-card {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-md);
+  padding: var(--k-space-lg);
+  background: var(--k-bg-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-lg);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--k-font);
+  transition: all var(--k-transition-normal);
+  width: 100%;
+}
+
+.clinico-action-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--k-shadow-md);
+  border-color: rgba(139, 92, 246, 0.2);
+}
+
+.clinico-action-card:hover .clinico-action-arrow {
+  transform: translateX(4px);
+  opacity: 1;
+}
+
+.clinico-action-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--k-radius-md);
+  flex-shrink: 0;
+}
+
+.clinico-action-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.clinico-action-text h4 {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--k-text-primary);
+  margin-bottom: 2px;
+}
+
+.clinico-action-text p {
+  font-size: 0.8125rem;
+  color: var(--k-text-muted);
+  line-height: 1.4;
+}
+
+.clinico-action-arrow {
+  color: var(--k-text-muted);
+  flex-shrink: 0;
+  opacity: 0.4;
+  transition: all var(--k-transition-normal);
+}
+
+/* ═══ Responsive ══════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .clinico-stats {
+    grid-template-columns: 1fr;
+  }
+  .clinico-actions {
+    grid-template-columns: 1fr;
+  }
+  .clinico-hero-content {
+    flex-direction: column;
+  }
+  .clinico-header {
+    flex-direction: column;
+    gap: var(--k-space-md);
+  }
+}

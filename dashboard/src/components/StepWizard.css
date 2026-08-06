@@ -1,0 +1,160 @@
+/* ============================================================
+   StepWizard — Indicador de progresso em etapas
+   Prefixo: .step-wizard
+   ============================================================ */
+
+.step-wizard {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  position: relative;
+}
+
+/* ── Item (círculo + rótulo) ─── */
+.step-wizard__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  position: relative;
+  min-width: 0;
+}
+
+/* ── Linha conectora ─── */
+.step-wizard__item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 18px;
+  left: calc(50% + 20px);
+  right: calc(-50% + 20px);
+  height: 2px;
+  background: var(--k-border);
+  transition: background var(--k-transition-normal);
+  z-index: 0;
+}
+
+.step-wizard__item--completed:not(:last-child)::after {
+  background: var(--k-success);
+}
+
+/* ── Círculo numerado ─── */
+.step-wizard__circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  font-family: var(--k-font);
+  border: 2px solid var(--k-border);
+  background: var(--k-bg-card);
+  color: var(--k-text-muted);
+  position: relative;
+  z-index: 1;
+  transition: all var(--k-transition-normal);
+  cursor: default;
+}
+
+/* ── Estados ─── */
+
+/* Concluído */
+.step-wizard__item--completed .step-wizard__circle {
+  background: var(--k-success);
+  border-color: var(--k-success);
+  color: white;
+  cursor: pointer;
+}
+
+.step-wizard__item--completed .step-wizard__circle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+}
+
+/* Atual */
+.step-wizard__item--current .step-wizard__circle {
+  background: var(--k-accent);
+  border-color: var(--k-accent);
+  color: white;
+  box-shadow: 0 0 0 4px var(--k-accent-glow), var(--k-shadow-glow);
+  animation: step-wizard-pulse 2s ease-in-out infinite;
+}
+
+@keyframes step-wizard-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 4px var(--k-accent-glow), 0 0 16px var(--k-accent-glow);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(139, 92, 246, 0.1), 0 0 24px var(--k-accent-glow);
+  }
+}
+
+/* Futuro */
+.step-wizard__item--future .step-wizard__circle {
+  opacity: 0.6;
+}
+
+/* ── Conteúdo textual ─── */
+.step-wizard__content {
+  margin-top: var(--k-space-sm);
+  text-align: center;
+  max-width: 120px;
+}
+
+.step-wizard__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--k-text-primary);
+  line-height: 1.3;
+  transition: color var(--k-transition-fast);
+}
+
+.step-wizard__item--future .step-wizard__label {
+  color: var(--k-text-muted);
+}
+
+.step-wizard__item--current .step-wizard__label {
+  color: var(--k-accent-hover);
+}
+
+.step-wizard__description {
+  font-size: 0.6875rem;
+  color: var(--k-text-muted);
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+.step-wizard__item--future .step-wizard__description {
+  opacity: 0.5;
+}
+
+/* ── Ícone dentro do círculo ─── */
+.step-wizard__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Responsivo: telas pequenas ─── */
+@media (max-width: 640px) {
+  .step-wizard__content {
+    display: none;
+  }
+
+  .step-wizard__item--current .step-wizard__content {
+    display: block;
+  }
+
+  .step-wizard__circle {
+    width: 30px;
+    height: 30px;
+    font-size: 0.75rem;
+  }
+
+  .step-wizard__item:not(:last-child)::after {
+    top: 14px;
+    left: calc(50% + 16px);
+    right: calc(-50% + 16px);
+  }
+}
