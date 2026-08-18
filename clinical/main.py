@@ -5,6 +5,8 @@ Separado do Paperclip (Control Plane) por responsabilidade unica.
 """
 
 import os
+import re
+import unicodedata
 import json
 import logging
 import tempfile
@@ -454,12 +456,16 @@ async def list_quarantine(status: str = "all", limit: int = 100, conn = Depends(
     all_lookup = [dict(r._mapping) for r in all_rows]
 
     import unicodedata
+    import re
 
     def norm(s):
         if not s:
             return ""
-        s = unicodedata.normalize('NFKD', str(s)).encode('ASCII', 'ignore').decode('ASCII').lower().strip()
-        return re.sub(r'[^a-z0-9]', '', s)
+        try:
+            clean = unicodedata.normalize('NFKD', str(s)).encode('ASCII', 'ignore').decode('ASCII').lower().strip()
+            return re.sub(r'[^a-z0-9]', '', clean)
+        except Exception:
+            return str(s).lower().strip()
 
     for item in items:
         if item.get("created_at"):
