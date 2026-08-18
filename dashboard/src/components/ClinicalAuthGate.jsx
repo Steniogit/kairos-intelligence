@@ -92,6 +92,17 @@ function AuthScreen({ onLogin }) {
       <div className="clinical-auth-card">
         <div className="clinical-auth-glow" />
         
+        {view !== 'login' && (
+          <button
+            type="button"
+            className="clinical-auth-top-back"
+            onClick={() => setView('login')}
+            title="Voltar ao início"
+          >
+            <ArrowLeft size={18} />
+          </button>
+        )}
+
         <div className="clinical-auth-icon">
           <ShieldCheck size={32} />
         </div>
@@ -270,10 +281,6 @@ function RegisterForm({ setView }) {
 
   return (
     <>
-      <button className="k-btn-link clinical-back-btn" onClick={() => setView('login')}>
-        <ArrowLeft size={16} /> Voltar
-      </button>
-
       <h2 className="clinical-auth-title">Cadastro Médico</h2>
       <p className="clinical-auth-subtitle">Insira o código de convite da sua clínica</p>
 
@@ -369,9 +376,18 @@ function RegisterForm({ setView }) {
           </div>
         )}
 
-        <button className="k-btn k-btn-primary clinical-auth-btn" type="submit" disabled={loading}>
-          {loading ? <Loader2 size={18} className="k-animate-spin" /> : 'Finalizar Cadastro'}
-        </button>
+        <div className="clinical-auth-actions">
+          <button className="k-btn k-btn-primary clinical-auth-btn" type="submit" disabled={loading}>
+            {loading ? <Loader2 size={18} className="k-animate-spin" /> : 'Finalizar Cadastro'}
+          </button>
+          <button
+            type="button"
+            className="k-btn k-btn-secondary clinical-auth-btn clinical-auth-btn-secondary"
+            onClick={() => setView('login')}
+          >
+            <ArrowLeft size={18} /> Voltar para o Login
+          </button>
+        </div>
       </form>
     </>
   )
@@ -420,10 +436,6 @@ function RecoverForm({ setView }) {
 
   return (
     <>
-      <button className="k-btn-link clinical-back-btn" onClick={() => setView('login')}>
-        <ArrowLeft size={16} /> Voltar
-      </button>
-
       <h2 className="clinical-auth-title">Recuperar PIN</h2>
       <p className="clinical-auth-subtitle">Informe seu CRM para enviarmos instruções ao administrador da clínica.</p>
 
@@ -448,9 +460,18 @@ function RecoverForm({ setView }) {
           </div>
         )}
 
-        <button className="k-btn k-btn-primary clinical-auth-btn" type="submit" disabled={loading}>
-          {loading ? <Loader2 size={18} className="k-animate-spin" /> : 'Solicitar Recuperação'}
-        </button>
+        <div className="clinical-auth-actions">
+          <button className="k-btn k-btn-primary clinical-auth-btn" type="submit" disabled={loading}>
+            {loading ? <Loader2 size={18} className="k-animate-spin" /> : 'Solicitar Recuperação'}
+          </button>
+          <button
+            type="button"
+            className="k-btn k-btn-secondary clinical-auth-btn clinical-auth-btn-secondary"
+            onClick={() => setView('login')}
+          >
+            <ArrowLeft size={18} /> Voltar para o Login
+          </button>
+        </div>
       </form>
     </>
   )

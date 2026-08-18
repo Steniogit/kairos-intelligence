@@ -48,6 +48,31 @@
   filter: blur(40px);
 }
 
+.clinical-auth-top-back {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  background: var(--k-bg-elevated) !important;
+  border: 1px solid var(--k-border) !important;
+  color: var(--k-text-muted);
+  width: 36px;
+  height: 36px;
+  border-radius: var(--k-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer !important;
+  transition: all var(--k-transition-fast);
+  z-index: 10;
+}
+
+.clinical-auth-top-back:hover {
+  background: var(--k-bg-card-hover) !important;
+  border-color: var(--k-accent) !important;
+  color: var(--k-text-primary);
+  transform: translateX(-2px);
+}
+
 .clinical-auth-icon {
   width: 64px;
   height: 64px;
@@ -156,6 +181,13 @@
   animation: fadeIn var(--k-transition-fast) ease-out;
 }
 
+.clinical-auth-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: var(--k-space-sm);
+}
+
 .clinical-auth-btn {
   width: 100%;
   height: 48px;
@@ -164,7 +196,6 @@
   gap: 8px;
   background: linear-gradient(135deg, #10b981, #14b8a6) !important;
   border: none !important;
-  margin-top: var(--k-space-sm);
   cursor: pointer !important;
 }
 
@@ -172,6 +203,21 @@
   background: linear-gradient(135deg, #059669, #0d9488) !important;
   box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
   cursor: pointer !important;
+}
+
+.clinical-auth-btn-secondary {
+  background: var(--k-bg-elevated) !important;
+  color: var(--k-text-primary) !important;
+  border: 1px solid var(--k-border) !important;
+  cursor: pointer !important;
+  transition: all var(--k-transition-fast);
+}
+
+.clinical-auth-btn-secondary:hover {
+  background: var(--k-bg-card-hover) !important;
+  border-color: #10b981 !important;
+  color: #10b981 !important;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.15);
 }
 
 .clinical-auth-btn:disabled {
@@ -250,9 +296,4 @@
 
 .clinical-user-logout:hover {
   color: var(--k-danger) !important;
-}
-.clinical-back-btn {
-  margin-bottom: 16px;
-  opacity: 0.8;
-  cursor: pointer !important;
 }
