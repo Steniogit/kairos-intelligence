@@ -16,7 +16,9 @@ import {
   User,
   Building,
   Mail,
-  ArrowLeft
+  ArrowLeft,
+  Eye,
+  EyeOff
 } from 'lucide-react'
 import { clinicalHealth } from '../services/clinicalApi'
 import { loginDoctor, registerDoctor, recoverPin } from '../services/api'
@@ -107,12 +109,19 @@ function AuthScreen({ onLogin }) {
 function LoginForm({ onLogin, setView }) {
   const [crm, setCrm] = useState('')
   const [pin, setPin] = useState('')
+  const [showPin, setShowPin] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError(null)
+
+    if (!crm.trim() || !pin.trim()) {
+      setError('Por favor, informe o CRM e o PIN.')
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -167,13 +176,21 @@ function LoginForm({ onLogin, setView }) {
         <div className="clinical-auth-input-wrapper">
           <input
             className="k-input clinical-auth-input"
-            type="password"
+            type={showPin ? 'text' : 'password'}
             placeholder="Digite seu PIN numérico"
             value={pin}
             onChange={(e) => setPin(e.target.value)}
             required
           />
-          <Lock size={16} className="clinical-auth-input-icon" />
+          <button
+            type="button"
+            className="clinical-auth-eye-btn"
+            onClick={() => setShowPin(!showPin)}
+            tabIndex={-1}
+            title={showPin ? 'Ocultar PIN' : 'Mostrar PIN'}
+          >
+            {showPin ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
         </div>
 
         {error && (
@@ -186,7 +203,7 @@ function LoginForm({ onLogin, setView }) {
         <button
           className="k-btn k-btn-primary clinical-auth-btn"
           type="submit"
-          disabled={!crm || !pin || loading}
+          disabled={loading}
         >
           {loading ? (
             <><Loader2 size={18} className="k-animate-spin" /> Verificando...</>
@@ -208,6 +225,8 @@ function LoginForm({ onLogin, setView }) {
 
 function RegisterForm({ setView }) {
   const [form, setForm] = useState({ invite_code: '', name: '', crm: '', pin: '', pinConfirm: '' })
+  const [showPin, setShowPin] = useState(false)
+  const [showPinConfirm, setShowPinConfirm] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(false)
@@ -299,25 +318,47 @@ function RegisterForm({ setView }) {
         <div className="clinical-auth-pin-row">
           <div>
             <label className="clinical-auth-label">Crie um PIN</label>
-            <input
-              className="k-input clinical-auth-input"
-              type="password"
-              placeholder="Ex: 1234"
-              value={form.pin}
-              onChange={(e) => setForm({...form, pin: e.target.value})}
-              required
-            />
+            <div className="clinical-auth-input-wrapper" style={{marginBottom: 0}}>
+              <input
+                className="k-input clinical-auth-input"
+                type={showPin ? 'text' : 'password'}
+                placeholder="Ex: 1234"
+                value={form.pin}
+                onChange={(e) => setForm({...form, pin: e.target.value})}
+                required
+              />
+              <button
+                type="button"
+                className="clinical-auth-eye-btn"
+                onClick={() => setShowPin(!showPin)}
+                tabIndex={-1}
+                title={showPin ? 'Ocultar PIN' : 'Mostrar PIN'}
+              >
+                {showPin ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
           <div>
             <label className="clinical-auth-label">Confirme o PIN</label>
-            <input
-              className="k-input clinical-auth-input"
-              type="password"
-              placeholder="Confirme"
-              value={form.pinConfirm}
-              onChange={(e) => setForm({...form, pinConfirm: e.target.value})}
-              required
-            />
+            <div className="clinical-auth-input-wrapper" style={{marginBottom: 0}}>
+              <input
+                className="k-input clinical-auth-input"
+                type={showPinConfirm ? 'text' : 'password'}
+                placeholder="Confirme"
+                value={form.pinConfirm}
+                onChange={(e) => setForm({...form, pinConfirm: e.target.value})}
+                required
+              />
+              <button
+                type="button"
+                className="clinical-auth-eye-btn"
+                onClick={() => setShowPinConfirm(!showPinConfirm)}
+                tabIndex={-1}
+                title={showPinConfirm ? 'Ocultar PIN' : 'Mostrar PIN'}
+              >
+                {showPinConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -347,6 +388,12 @@ function RecoverForm({ setView }) {
   async function handleSubmit(e) {
     e.preventDefault()
     setError(null)
+
+    if (!crm.trim()) {
+      setError('Por favor, informe o CRM.')
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -401,7 +448,7 @@ function RecoverForm({ setView }) {
           </div>
         )}
 
-        <button className="k-btn k-btn-primary clinical-auth-btn" type="submit" disabled={!crm || loading}>
+        <button className="k-btn k-btn-primary clinical-auth-btn" type="submit" disabled={loading}>
           {loading ? <Loader2 size={18} className="k-animate-spin" /> : 'Solicitar Recuperação'}
         </button>
       </form>

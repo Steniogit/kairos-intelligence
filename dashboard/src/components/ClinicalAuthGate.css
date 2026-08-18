@@ -97,10 +97,9 @@
 }
 
 .clinical-auth-input {
-  padding-right: 40px !important;
+  padding-right: 42px !important;
   font-size: 1rem !important;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .clinical-auth-input-icon {
@@ -110,6 +109,37 @@
   transform: translateY(-50%);
   color: var(--k-text-muted);
   pointer-events: none;
+}
+
+.clinical-auth-eye-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent !important;
+  border: none !important;
+  color: var(--k-text-muted);
+  cursor: pointer !important;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--k-radius-sm);
+  transition: color var(--k-transition-fast), background var(--k-transition-fast);
+  z-index: 2;
+  box-shadow: none !important;
+}
+
+.clinical-auth-eye-btn:hover {
+  color: var(--k-text-primary);
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.clinical-auth-pin-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--k-space-sm);
+  margin-bottom: var(--k-space-md);
 }
 
 .clinical-auth-error {
@@ -135,16 +165,18 @@
   background: linear-gradient(135deg, #10b981, #14b8a6) !important;
   border: none !important;
   margin-top: var(--k-space-sm);
+  cursor: pointer !important;
 }
 
 .clinical-auth-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #059669, #0d9488) !important;
   box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+  cursor: pointer !important;
 }
 
 .clinical-auth-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  opacity: 0.7;
+  cursor: pointer !important;
 }
 
 .clinical-auth-links {
@@ -162,7 +194,7 @@
   border: none !important;
   outline: none !important;
   padding: 8px;
-  cursor: pointer;
+  cursor: pointer !important;
   transition: color var(--k-transition-fast);
   text-decoration: none;
   box-shadow: none !important;
@@ -222,4 +254,5 @@
 .clinical-back-btn {
   margin-bottom: 16px;
   opacity: 0.8;
+  cursor: pointer !important;
 }
