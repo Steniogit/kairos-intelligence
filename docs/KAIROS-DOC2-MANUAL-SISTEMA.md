@@ -631,3 +631,8 @@ Ao receber o sistema, você passará por este processo de treinamento:
 *Manual do Sistema v2.7 — Abril 2026*
 *Kairós Intelligence para Clínicas*
 *Para suporte: [número do suporte]*
+
+
+#### 4. Biblioteca de Conhecimentos & Curadoria Central (Quarentena do Grafo)
+- **Para o Médico (Usuário Geral):** Tela *"Minhas Sugestões para Biblioteca de Conhecimentos"*, onde o médico pode sugerir novos protocolos clínicos, bulas e artigos médicos via link ou texto. Ele acompanha em tempo real se a sugestão está `Em Análise`, `Aprovada pelo Administrador` (ativa no Grafo Global) ou `Não Aprovada` (com a justificativa da curadoria).
+- **Para o Administrador Geral (Curadoria Central):** Tela *"Quarentena do Grafo"*, onde visualiza todas as sugestões enviadas por médicos de todas as clínicas, audita as entidades extraídas e aprova (inserindo no Neo4j Global compartilhado com todos os clientes) ou rejeita com justificativa.

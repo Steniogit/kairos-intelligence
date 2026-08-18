@@ -1,24 +1,35 @@
 /* ============================================================
-   QuarentenaPage.css — Estilos da página de quarentena
+   QuarentenaPage.css — Central de Curadoria e Biblioteca
    ============================================================ */
 
 .quarentena-page {
-  padding: 0;
+  padding: var(--k-space-xl);
+  max-width: 1200px;
+  margin: 0 auto;
+  animation: fadeIn var(--k-transition-normal) ease-out;
 }
 
-/* ═══ Header ═══════════════════════════════════════════════ */
+/* ── Header ─── */
 .quarentena-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--k-space-lg);
+  align-items: center;
+  margin-bottom: var(--k-space-xl);
+  flex-wrap: wrap;
   gap: var(--k-space-md);
 }
 
 .quarentena-header-left {
   display: flex;
   align-items: center;
-  gap: var(--k-space-sm);
+  gap: var(--k-space-md);
+}
+
+.quarentena-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--k-text-primary);
+  margin-bottom: 2px;
 }
 
 .quarentena-header-right {
@@ -27,21 +38,20 @@
   gap: var(--k-space-sm);
 }
 
-.quarentena-title {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--k-text-primary);
-}
-
-/* ═══ Stats ════════════════════════════════════════════════ */
+/* ── Stats ─── */
 .quarentena-stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--k-space-md);
-  margin-bottom: var(--k-space-lg);
+  margin-bottom: var(--k-space-xl);
 }
 
-/* ═══ Toolbar ══════════════════════════════════════════════ */
+.quarentena-stat--active {
+  border-color: var(--k-accent) !important;
+  box-shadow: 0 0 16px rgba(139, 92, 246, 0.2);
+}
+
+/* ── Toolbar ─── */
 .quarentena-toolbar {
   display: flex;
   align-items: center;
@@ -53,7 +63,7 @@
 .quarentena-search {
   position: relative;
   flex: 1;
-  min-width: 200px;
+  min-width: 250px;
 }
 
 .quarentena-search-icon {
@@ -66,39 +76,22 @@
 }
 
 .quarentena-search .k-input {
-  padding-left: 40px;
+  padding-left: 38px;
 }
 
-.quarentena-filters .k-select {
-  min-width: 160px;
+.quarentena-filters {
+  display: flex;
+  gap: var(--k-space-sm);
 }
 
 .quarentena-bulk-actions {
   display: flex;
   align-items: center;
   gap: var(--k-space-sm);
-  padding: 6px 12px;
-  background: var(--k-bg-card);
-  border: 1px solid var(--k-border);
-  border-radius: var(--k-radius-md);
-  animation: fadeIn var(--k-transition-fast);
+  margin-left: auto;
 }
 
-/* ═══ Loading ══════════════════════════════════════════════ */
-.quarentena-loading {
-  display: flex;
-  flex-direction: column;
-  gap: var(--k-space-md);
-}
-
-.quarentena-item-skeleton {
-  padding: var(--k-space-lg);
-  background: var(--k-bg-card);
-  border: 1px solid var(--k-border);
-  border-radius: var(--k-radius-lg);
-}
-
-/* ═══ List ═════════════════════════════════════════════════ */
+/* ── List ─── */
 .quarentena-list {
   display: flex;
   flex-direction: column;
@@ -106,8 +99,7 @@
 }
 
 .quarentena-list-header {
-  padding: 0 var(--k-space-md);
-  margin-bottom: var(--k-space-xs);
+  padding: 8px 16px;
 }
 
 .quarentena-checkbox-label {
@@ -117,14 +109,6 @@
   cursor: pointer;
 }
 
-.quarentena-checkbox-label input[type="checkbox"] {
-  accent-color: var(--k-accent);
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-}
-
-/* ═══ Item ═════════════════════════════════════════════════ */
 .quarentena-item {
   background: var(--k-bg-card);
   border: 1px solid var(--k-border);
@@ -134,148 +118,215 @@
 }
 
 .quarentena-item:hover {
-  border-color: rgba(139, 92, 246, 0.2);
+  border-color: var(--k-border-hover);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .quarentena-item--expanded {
-  border-color: rgba(139, 92, 246, 0.3);
-  box-shadow: var(--k-shadow-sm);
+  border-color: var(--k-accent);
 }
 
 .quarentena-item-row {
   display: flex;
   align-items: center;
-  gap: var(--k-space-sm);
   padding: var(--k-space-md) var(--k-space-lg);
+  gap: var(--k-space-md);
 }
 
 .quarentena-checkbox {
-  flex-shrink: 0;
-}
-
-.quarentena-checkbox input[type="checkbox"] {
-  accent-color: var(--k-accent);
-  width: 16px;
-  height: 16px;
+  display: flex;
+  align-items: center;
   cursor: pointer;
 }
 
 .quarentena-item-content {
-  flex: 1;
   display: flex;
   align-items: center;
-  gap: var(--k-space-md);
+  justify-content: space-between;
+  flex: 1;
   cursor: pointer;
-  min-width: 0;
+  gap: var(--k-space-md);
 }
 
 .quarentena-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   flex: 1;
-  min-width: 0;
 }
 
 .quarentena-item-title {
   display: flex;
   align-items: center;
-  gap: var(--k-space-sm);
-  margin-bottom: 4px;
+  gap: 8px;
 }
 
 .quarentena-item-id {
   font-size: 0.8125rem;
   font-weight: 700;
-  color: var(--k-text-secondary);
+  color: var(--k-text-muted);
   font-family: var(--k-font-mono);
 }
 
+.quarentena-source-type-tag {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--k-text-secondary);
+}
+
 .quarentena-item-url {
-  margin-bottom: 4px;
+  font-size: 0.9375rem;
+  font-weight: 600;
 }
 
 .quarentena-item-url a {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.8125rem;
-  color: var(--k-accent);
+  color: var(--k-accent-hover);
   text-decoration: none;
-  transition: color var(--k-transition-fast);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .quarentena-item-url a:hover {
-  color: var(--k-accent-hover);
   text-decoration: underline;
+}
+
+.quarentena-title-text {
+  color: var(--k-text-primary);
+  display: flex;
+  align-items: center;
 }
 
 .quarentena-item-meta {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: 0.75rem;
   color: var(--k-text-muted);
-}
-
-.quarentena-item-expand {
-  color: var(--k-text-muted);
-  flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 .quarentena-item-actions {
   display: flex;
-  gap: 4px;
-  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
 }
 
-.quarentena-btn-approve { color: var(--k-success) !important; }
-.quarentena-btn-approve:hover { background: var(--k-success-bg) !important; }
-.quarentena-btn-reject { color: var(--k-danger) !important; }
-.quarentena-btn-reject:hover { background: var(--k-danger-bg) !important; }
+.quarentena-btn-action-approve {
+  padding: 6px 14px !important;
+  font-size: 0.8125rem !important;
+  height: 34px !important;
+}
 
-/* ═══ Expanded Details ═════════════════════════════════════ */
+.quarentena-btn-action-reject {
+  padding: 6px 14px !important;
+  font-size: 0.8125rem !important;
+  height: 34px !important;
+}
+
+/* ── Feedback Boxes para Usuários ─── */
+.quarentena-user-feedback {
+  margin-top: 6px;
+}
+
+.quarentena-feedback-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--k-radius-md);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.quarentena-feedback--pending {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+.quarentena-feedback--approved {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+
+.quarentena-feedback--rejected {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.quarentena-feedback-notes {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: var(--k-text-secondary);
+}
+
+.quarentena-admin-rejection-note {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--k-danger);
+  font-style: italic;
+}
+
+/* ── Expanded Area ─── */
 .quarentena-expanded {
-  padding: 0 var(--k-space-lg) var(--k-space-lg);
+  padding: var(--k-space-md) var(--k-space-lg);
   border-top: 1px solid var(--k-border);
-  margin-top: 0;
-  padding-top: var(--k-space-lg);
-  animation: fadeIn var(--k-transition-fast);
-}
-
-.quarentena-section {
-  margin-bottom: var(--k-space-lg);
+  background: rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-space-md);
 }
 
 .quarentena-section-title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--k-text-secondary);
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--k-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: var(--k-space-sm);
+  margin-bottom: 8px;
 }
 
-/* Entities */
+.quarentena-raw-text-box {
+  padding: 10px 14px;
+  background: var(--k-bg-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-md);
+  font-size: 0.875rem;
+  color: var(--k-text-secondary);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
 .quarentena-entities {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--k-space-sm);
+  gap: 8px;
 }
 
 .quarentena-entity {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: var(--k-bg-elevated);
+  background: var(--k-bg-card);
   border: 1px solid var(--k-border);
   border-radius: var(--k-radius-full);
   font-size: 0.8125rem;
-}
-
-.quarentena-entity-icon {
-  font-size: 0.875rem;
 }
 
 .quarentena-entity-name {
@@ -286,22 +337,18 @@
 .quarentena-entity-type {
   font-size: 0.6875rem;
   color: var(--k-text-muted);
-  font-family: var(--k-font-mono);
-  background: var(--k-bg-input);
-  padding: 1px 6px;
-  border-radius: var(--k-radius-sm);
+  text-transform: uppercase;
 }
 
 .quarentena-entity-cid {
   font-size: 0.6875rem;
-  color: var(--k-info);
-  font-family: var(--k-font-mono);
-  background: var(--k-info-bg);
+  color: var(--k-accent);
+  background: rgba(139, 92, 246, 0.1);
   padding: 1px 6px;
-  border-radius: var(--k-radius-sm);
+  border-radius: 4px;
+  font-family: var(--k-font-mono);
 }
 
-/* Cypher */
 .quarentena-cypher {
   display: flex;
   flex-direction: column;
@@ -310,60 +357,103 @@
 
 .quarentena-cypher-query {
   padding: 8px 12px;
-  background: var(--k-bg-input);
-  border: 1px solid var(--k-border);
-  border-radius: var(--k-radius-sm);
-  font-family: var(--k-font-mono);
-  font-size: 0.75rem;
-  color: #10b981;
-  white-space: pre-wrap;
-  word-break: break-all;
-  line-height: 1.5;
-  overflow-x: auto;
-}
-
-/* Raw JSON */
-.quarentena-raw {
-  margin-top: var(--k-space-md);
-}
-
-.quarentena-raw summary {
-  cursor: pointer;
-  padding: 6px 0;
-  user-select: none;
-}
-
-.quarentena-raw summary:hover {
-  color: var(--k-text-primary);
-}
-
-.quarentena-raw-json {
-  margin-top: var(--k-space-sm);
-  padding: var(--k-space-md);
-  background: var(--k-bg-input);
+  background: rgba(0, 0, 0, 0.3);
   border: 1px solid var(--k-border);
   border-radius: var(--k-radius-md);
   font-family: var(--k-font-mono);
   font-size: 0.75rem;
-  color: var(--k-text-secondary);
-  white-space: pre-wrap;
-  word-break: break-all;
-  max-height: 400px;
-  overflow-y: auto;
-  line-height: 1.5;
+  color: #a78bfa;
+  overflow-x: auto;
+  margin: 0;
 }
 
-/* ═══ Responsive ══════════════════════════════════════════ */
-@media (max-width: 900px) {
-  .quarentena-stats {
-    grid-template-columns: 1fr;
-  }
-  .quarentena-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .quarentena-toolbar {
-    flex-direction: column;
-    align-items: stretch;
-  }
+/* ── Modais ─── */
+.quarentena-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--k-space-md);
+  animation: fadeIn var(--k-transition-fast) ease-out;
+}
+
+.quarentena-modal-card {
+  background: var(--k-bg-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-xl);
+  width: 100%;
+  max-width: 540px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  animation: slideUp var(--k-transition-normal) ease-out;
+  overflow: hidden;
+}
+
+.quarentena-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--k-border);
+}
+
+.quarentena-modal-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--k-radius-md);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(20, 184, 166, 0.2));
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quarentena-modal-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--k-text-primary);
+  margin: 0;
+}
+
+.quarentena-modal-form {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.quarentena-form-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--k-text-secondary);
+  display: block;
+  margin-bottom: -6px;
+}
+
+.quarentena-form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.quarentena-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.quarentena-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.quarentena-empty-card {
+  background: var(--k-bg-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-xl);
+  padding: 48px 24px;
+  text-align: center;
 }

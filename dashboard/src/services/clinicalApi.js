@@ -70,19 +70,26 @@ export async function uploadBackup(file, sessionId) {
 
 // ═══ Quarentena ═════════════════════════════════════════════
 
-export async function fetchQuarantine(status = null) {
-  const params = status ? { status } : {}
+export async function fetchQuarantine(status = 'all') {
+  const params = status ? { status } : { status: 'all' }
   const { data } = await clinicalApi.get('/api/v1/quarantine', { params })
   return data
 }
 
-export async function approveQuarantine(id) {
-  const { data } = await clinicalApi.post(`/api/v1/quarantine/${id}/approve`)
+export async function approveQuarantine(id, reviewer = 'admin') {
+  const { data } = await clinicalApi.post(`/api/v1/quarantine/${id}/approve`, null, {
+    params: { reviewer }
+  })
   return data
 }
 
-export async function rejectQuarantine(id) {
-  const { data } = await clinicalApi.post(`/api/v1/quarantine/${id}/reject`)
+export async function rejectQuarantine(id, notes = '', reviewer = 'admin') {
+  const { data } = await clinicalApi.post(`/api/v1/quarantine/${id}/reject`, { notes, reviewer })
+  return data
+}
+
+export async function suggestKnowledge(payload) {
+  const { data } = await clinicalApi.post('/api/v1/quarantine/suggest', payload)
   return data
 }
 

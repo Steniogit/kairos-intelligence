@@ -1,6 +1,7 @@
 /* ============================================================
-   QuarentenaPage — Revisão e aprovação de entidades do grafo
-   Lista itens na quarentena com ações de aprovar/rejeitar
+   QuarentenaPage — Central de Curadoria e Biblioteca de Conhecimentos
+   - Visão Admin: Quarentena do Grafo (Curadoria Central)
+   - Visão Médico: Minhas Sugestões para Biblioteca de Conhecimentos
    ============================================================ */
 
 import { useState, useEffect, useCallback } from 'react'
@@ -10,7 +11,6 @@ import {
   CheckCircle2,
   XCircle,
   Search,
-  Filter,
   ChevronDown,
   ChevronUp,
   ExternalLink,
@@ -20,20 +20,27 @@ import {
   ArrowLeft,
   Database,
   AlertTriangle,
-  Trash2,
   Check,
   X,
+  Plus,
+  BookOpen,
+  Send,
+  MessageSquare,
+  Sparkles,
+  Info,
+  Clock,
+  FileText
 } from 'lucide-react'
-import { fetchQuarantine, approveQuarantine, rejectQuarantine } from '../../services/clinicalApi'
+import { fetchQuarantine, approveQuarantine, rejectQuarantine, suggestKnowledge } from '../../services/clinicalApi'
 import { useClinicalAuth } from '../../components/ClinicalAuthGate'
 import { useToast } from '../../components/Toast'
 import ConfirmModal from '../../components/ConfirmModal'
 import './QuarentenaPage.css'
 
 const STATUS_CONFIG = {
-  pending: { label: 'Pendente', className: 'k-badge-warning', icon: AlertTriangle },
+  pending: { label: 'Em Análise', className: 'k-badge-warning', icon: Clock },
   approved: { label: 'Aprovado', className: 'k-badge-success', icon: CheckCircle2 },
-  rejected: { label: 'Rejeitado', className: 'k-badge-danger', icon: XCircle },
+  rejected: { label: 'Não Aprovado', className: 'k-badge-danger', icon: XCircle },
 }
 
 const ENTITY_ICONS = {
@@ -49,6 +56,7 @@ export default function QuarentenaPage() {
   const navigate = useNavigate()
   const { addToast } = useToast()
   const { session } = useClinicalAuth()
+  const isAdmin = Boolean(session?.isAdmin)
 
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -58,17 +66,33 @@ export default function QuarentenaPage() {
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [actionLoading, setActionLoading] = useState(null)
 
-  // Modal
-  const [modal, setModal] = useState({ open: false, type: null, ids: [] })
-  const [modalLoading, setModalLoading] = useState(false)
+  // Modais
+  const [confirmModal, setConfirmModal] = useState({ open: false, type: null, ids: [] })
+  const [confirmLoading, setConfirmLoading] = useState(false)
+  
+  // Modal de Rejeição com Motivo (Admin)
+  const [rejectModal, setRejectModal] = useState({ open: false, id: null })
+  const [rejectReason, setRejectReason] = useState('')
+  const [rejecting, setRejecting] = useState(false)
+
+  // Modal de Nova Sugestão (Médico / Usuário)
+  const [suggestModalOpen, setSuggestModalOpen] = useState(false)
+  const [suggestForm, setSuggestForm] = useState({
+    title: '',
+    source_url: '',
+    source_type: 'protocolo',
+    content_text: '',
+    notes: ''
+  })
+  const [suggesting, setSuggesting] = useState(false)
 
   const loadItems = useCallback(async () => {
     setLoading(true)
     try {
-      const data = await fetchQuarantine()
+      const data = await fetchQuarantine('all')
       setItems(Array.isArray(data) ? data : (data?.items || []))
     } catch (err) {
-      addToast('Erro ao carregar quarentena.', 'error')
+      addToast('Erro ao carregar itens de conhecimento.', 'error')
       setItems([])
     } finally {
       setLoading(false)
@@ -79,22 +103,36 @@ export default function QuarentenaPage() {
     loadItems()
   }, [loadItems])
 
-  // Filter & search
+  // Formatação de data brasileira
+  const formatDateBR = (dateStr) => {
+    if (!dateStr) return ''
+    try {
+      const d = new Date(dateStr)
+      return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    } catch {
+      return dateStr
+    }
+  }
+
+  // Filtragem
   const filtered = items.filter((item) => {
     const matchesStatus = filterStatus === 'all' || item.status === filterStatus
+    const term = search.toLowerCase()
     const matchesSearch =
       !search ||
-      (item.source_url || '').toLowerCase().includes(search.toLowerCase()) ||
-      JSON.stringify(item.extracted_data || {}).toLowerCase().includes(search.toLowerCase())
+      (item.source_url || '').toLowerCase().includes(term) ||
+      (item.raw_text || '').toLowerCase().includes(term) ||
+      (item.submitted_by || '').toLowerCase().includes(term) ||
+      JSON.stringify(item.extracted_data || {}).toLowerCase().includes(term)
     return matchesStatus && matchesSearch
   })
 
-  // Stats
+  // Contadores
   const pendingCount = items.filter((i) => i.status === 'pending').length
   const approvedCount = items.filter((i) => i.status === 'approved').length
   const rejectedCount = items.filter((i) => i.status === 'rejected').length
 
-  // Selection
+  // Seleção múltipla (Admin)
   function toggleSelect(id) {
     setSelectedIds((prev) => {
       const next = new Set(prev)
@@ -112,12 +150,12 @@ export default function QuarentenaPage() {
     }
   }
 
-  // Actions
+  // Ações de Curadoria (Admin)
   async function handleApprove(id) {
     setActionLoading(id)
     try {
-      await approveQuarantine(id)
-      addToast('Entidade aprovada e inserida no grafo!', 'success')
+      await approveQuarantine(id, session?.name || 'Administrador')
+      addToast('Conhecimento aprovado e integrado ao Grafo Global!', 'success')
       await loadItems()
     } catch (err) {
       addToast('Erro ao aprovar. Tente novamente.', 'error')
@@ -126,29 +164,40 @@ export default function QuarentenaPage() {
     }
   }
 
-  async function handleReject(id) {
-    setActionLoading(id)
+  function openRejectModal(id) {
+    setRejectReason('')
+    setRejectModal({ open: true, id })
+  }
+
+  async function handleConfirmReject() {
+    if (!rejectModal.id) return
+    setRejecting(true)
     try {
-      await rejectQuarantine(id)
-      addToast('Entidade rejeitada.', 'warning')
+      await rejectQuarantine(
+        rejectModal.id,
+        rejectReason.trim() || 'Não atende aos critérios científicos da curadoria.',
+        session?.name || 'Administrador'
+      )
+      addToast('Sugestão rejeitada com motivo registrado.', 'warning')
+      setRejectModal({ open: false, id: null })
       await loadItems()
     } catch (err) {
-      addToast('Erro ao rejeitar. Tente novamente.', 'error')
+      addToast('Erro ao rejeitar sugestão.', 'error')
     } finally {
-      setActionLoading(null)
+      setRejecting(false)
     }
   }
 
   async function handleBulkAction(type) {
-    setModalLoading(true)
-    const ids = [...modal.ids]
+    setConfirmLoading(true)
+    const ids = [...confirmModal.ids]
     let successCount = 0
     let errorCount = 0
 
     for (const id of ids) {
       try {
-        if (type === 'approve') await approveQuarantine(id)
-        else await rejectQuarantine(id)
+        if (type === 'approve') await approveQuarantine(id, session?.name || 'Administrador')
+        else await rejectQuarantine(id, 'Rejeitado em lote pelo Administrador.', session?.name || 'Administrador')
         successCount++
       } catch {
         errorCount++
@@ -165,8 +214,8 @@ export default function QuarentenaPage() {
       addToast(`${errorCount} ite${errorCount > 1 ? 'ns' : 'm'} com erro.`, 'error')
     }
 
-    setModal({ open: false, type: null, ids: [] })
-    setModalLoading(false)
+    setConfirmModal({ open: false, type: null, ids: [] })
+    setConfirmLoading(false)
     setSelectedIds(new Set())
     await loadItems()
   }
@@ -180,47 +229,75 @@ export default function QuarentenaPage() {
       addToast('Selecione itens pendentes para executar a ação.', 'info')
       return
     }
-    setModal({ open: true, type, ids })
+    setConfirmModal({ open: true, type, ids })
   }
 
-  // Parse extracted data safely
-  function getEntities(item) {
-    try {
-      const data = typeof item.extracted_data === 'string'
-        ? JSON.parse(item.extracted_data)
-        : item.extracted_data
-      return data?.entities || []
-    } catch {
-      return []
+  // Envio de Nova Sugestão (Médico)
+  async function handleCreateSuggestion(e) {
+    e.preventDefault()
+    if (!suggestForm.title.trim()) {
+      addToast('Por favor, informe o título do protocolo ou artigo.', 'warning')
+      return
     }
+    setSuggesting(true)
+    try {
+      await suggestKnowledge({
+        title: suggestForm.title.trim(),
+        source_url: suggestForm.source_url.trim(),
+        source_type: suggestForm.source_type,
+        content_text: suggestForm.content_text.trim(),
+        notes: suggestForm.notes.trim()
+      })
+      addToast('Sugestão enviada com sucesso para análise do Administrador!', 'success')
+      setSuggestModalOpen(false)
+      setSuggestForm({ title: '', source_url: '', source_type: 'protocolo', content_text: '', notes: '' })
+      await loadItems()
+    } catch (err) {
+      addToast('Erro ao enviar sugestão: ' + (err.response?.data?.detail || err.message), 'error')
+    } finally {
+      setSuggesting(false)
+    }
+  }
+
+  function getEntities(item) {
+    return item?.extracted_data?.entities || []
   }
 
   function getCypherQueries(item) {
-    try {
-      const data = typeof item.extracted_data === 'string'
-        ? JSON.parse(item.extracted_data)
-        : item.extracted_data
-      return data?.cypher_queries || []
-    } catch {
-      return []
-    }
+    return item?.extracted_data?.cypher_queries || []
   }
 
   return (
     <div className="quarentena-page">
-      {/* Header */}
+      {/* Header Principal */}
       <div className="quarentena-header">
         <div className="quarentena-header-left">
           <button className="k-btn k-btn-ghost k-btn-icon" onClick={() => navigate('/clinico')} title="Voltar">
             <ArrowLeft size={18} />
           </button>
           <div>
-            <h2 className="quarentena-title">Quarentena do Grafo</h2>
-            <p className="k-text-sm k-text-muted">{items.length} itens na quarentena</p>
+            <h2 className="quarentena-title">
+              {isAdmin ? 'Quarentena do Grafo' : 'Minhas Sugestões para Biblioteca de Conhecimentos'}
+            </h2>
+            <p className="k-text-sm k-text-muted">
+              {isAdmin
+                ? 'Curadoria Central — Revisão e aprovação de entidades médicas para o Grafo Global'
+                : 'Envie protocolos e diretrizes médicas para análise da curadoria'}
+            </p>
           </div>
         </div>
+
         <div className="quarentena-header-right">
-          
+          {!isAdmin && (
+            <button
+              className="k-btn k-btn-primary"
+              onClick={() => setSuggestModalOpen(true)}
+              id="btn-new-suggestion"
+            >
+              <Plus size={16} /> Sugerir Novo Conhecimento
+            </button>
+          )}
+
           <button className="k-btn k-btn-secondary" onClick={loadItems} disabled={loading} id="btn-refresh-quarentena">
             <RefreshCw size={16} className={loading ? 'k-animate-spin' : ''} />
             Atualizar
@@ -228,18 +305,27 @@ export default function QuarentenaPage() {
         </div>
       </div>
 
-      {/* Stats */}
+      {/* Cards de Resumo */}
       <div className="quarentena-stats">
-        <div className="k-stat-card" onClick={() => setFilterStatus('pending')} style={{ cursor: 'pointer' }}>
+        <div
+          className={`k-stat-card ${filterStatus === 'pending' ? 'quarentena-stat--active' : ''}`}
+          onClick={() => setFilterStatus(filterStatus === 'pending' ? 'all' : 'pending')}
+          style={{ cursor: 'pointer' }}
+        >
           <div className="k-stat-icon" style={{ background: 'var(--k-warning-bg)', color: 'var(--k-warning)' }}>
-            <AlertTriangle size={22} />
+            <Clock size={22} />
           </div>
           <div>
             <div className="k-stat-value">{pendingCount}</div>
-            <div className="k-stat-label">Pendentes</div>
+            <div className="k-stat-label">Em Análise</div>
           </div>
         </div>
-        <div className="k-stat-card" onClick={() => setFilterStatus('approved')} style={{ cursor: 'pointer' }}>
+
+        <div
+          className={`k-stat-card ${filterStatus === 'approved' ? 'quarentena-stat--active' : ''}`}
+          onClick={() => setFilterStatus(filterStatus === 'approved' ? 'all' : 'approved')}
+          style={{ cursor: 'pointer' }}
+        >
           <div className="k-stat-icon" style={{ background: 'var(--k-success-bg)', color: 'var(--k-success)' }}>
             <CheckCircle2 size={22} />
           </div>
@@ -248,24 +334,29 @@ export default function QuarentenaPage() {
             <div className="k-stat-label">Aprovados</div>
           </div>
         </div>
-        <div className="k-stat-card" onClick={() => setFilterStatus('rejected')} style={{ cursor: 'pointer' }}>
+
+        <div
+          className={`k-stat-card ${filterStatus === 'rejected' ? 'quarentena-stat--active' : ''}`}
+          onClick={() => setFilterStatus(filterStatus === 'rejected' ? 'all' : 'rejected')}
+          style={{ cursor: 'pointer' }}
+        >
           <div className="k-stat-icon" style={{ background: 'var(--k-danger-bg)', color: 'var(--k-danger)' }}>
             <XCircle size={22} />
           </div>
           <div>
             <div className="k-stat-value">{rejectedCount}</div>
-            <div className="k-stat-label">Rejeitados</div>
+            <div className="k-stat-label">Não Aprovados</div>
           </div>
         </div>
       </div>
 
-      {/* Toolbar */}
+      {/* Barra de Filtros e Busca */}
       <div className="quarentena-toolbar">
         <div className="quarentena-search">
           <Search size={18} className="quarentena-search-icon" />
           <input
             className="k-input"
-            placeholder="Buscar por URL ou entidade..."
+            placeholder={isAdmin ? "Buscar por URL, médico ou entidade..." : "Buscar nas minhas sugestões..."}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             id="input-search-quarentena"
@@ -279,27 +370,27 @@ export default function QuarentenaPage() {
             onChange={(e) => setFilterStatus(e.target.value)}
             id="select-filter-status"
           >
-            <option value="all">Todos os status</option>
-            <option value="pending">Pendentes</option>
-            <option value="approved">Aprovados</option>
-            <option value="rejected">Rejeitados</option>
+            <option value="all">Todos os status ({items.length})</option>
+            <option value="pending">Em Análise ({pendingCount})</option>
+            <option value="approved">Aprovados ({approvedCount})</option>
+            <option value="rejected">Não Aprovados ({rejectedCount})</option>
           </select>
         </div>
 
-        {selectedIds.size > 0 && (
+        {isAdmin && selectedIds.size > 0 && (
           <div className="quarentena-bulk-actions">
             <span className="k-text-sm k-text-muted">{selectedIds.size} selecionado(s)</span>
             <button className="k-btn k-btn-primary" onClick={() => openBulkModal('approve')} id="btn-bulk-approve">
-              <Check size={16} /> Aprovar
+              <Check size={16} /> Aprovar Selecionados
             </button>
             <button className="k-btn k-btn-danger" onClick={() => openBulkModal('reject')} id="btn-bulk-reject">
-              <X size={16} /> Rejeitar
+              <X size={16} /> Rejeitar Selecionados
             </button>
           </div>
         )}
       </div>
 
-      {/* Items List */}
+      {/* Lista de Itens */}
       {loading ? (
         <div className="quarentena-loading">
           {[1, 2, 3].map((i) => (
@@ -310,24 +401,38 @@ export default function QuarentenaPage() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="k-empty">
-          <Database size={56} className="k-empty-icon" />
-          <h3>{search || filterStatus !== 'all' ? 'Nenhum item encontrado' : 'Quarentena vazia'}</h3>
+        <div className="k-empty quarentena-empty-card">
+          <BookOpen size={56} className="k-empty-icon" style={{ opacity: 0.6 }} />
+          <h3>{search || filterStatus !== 'all' ? 'Nenhuma sugestão encontrada' : 'Nenhum item na lista'}</h3>
           <p className="k-text-sm k-text-muted" style={{ marginTop: 4 }}>
-            {search || filterStatus !== 'all'
-              ? 'Tente alterar os filtros.'
-              : 'Nenhuma entidade aguardando revisão.'}
+            {!isAdmin
+              ? 'Você ainda não enviou sugestões ou não há itens com o filtro selecionado.'
+              : 'Nenhuma entidade médica aguardando curadoria.'}
           </p>
+          {!isAdmin && (
+            <button
+              className="k-btn k-btn-primary"
+              onClick={() => setSuggestModalOpen(true)}
+              style={{ marginTop: 16 }}
+            >
+              <Plus size={16} /> Fazer Primeira Sugestão
+            </button>
+          )}
         </div>
       ) : (
         <div className="quarentena-list">
-          {/* Select all header */}
-          <div className="quarentena-list-header">
-            <label className="quarentena-checkbox-label">
-              <input type="checkbox" checked={selectedIds.size === filtered.length && filtered.length > 0} onChange={toggleSelectAll} />
-              <span className="k-text-sm k-text-muted">Selecionar todos</span>
-            </label>
-          </div>
+          {isAdmin && (
+            <div className="quarentena-list-header">
+              <label className="quarentena-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.size === filtered.length && filtered.length > 0}
+                  onChange={toggleSelectAll}
+                />
+                <span className="k-text-sm k-text-muted">Selecionar todos</span>
+              </label>
+            </div>
+          )}
 
           {filtered.map((item) => {
             const isExpanded = expandedId === item.id
@@ -339,17 +444,19 @@ export default function QuarentenaPage() {
             return (
               <div
                 key={item.id}
-                className={`quarentena-item ${isExpanded ? 'quarentena-item--expanded' : ''}`}
+                className={`quarentena-item ${isExpanded ? 'quarentena-item--expanded' : ''} quarentena-item--${item.status}`}
               >
-                {/* Main row */}
+                {/* Linha Principal */}
                 <div className="quarentena-item-row">
-                  <label className="quarentena-checkbox" onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(item.id)}
-                      onChange={() => toggleSelect(item.id)}
-                    />
-                  </label>
+                  {isAdmin && (
+                    <label className="quarentena-checkbox" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(item.id)}
+                        onChange={() => toggleSelect(item.id)}
+                      />
+                    </label>
+                  )}
 
                   <div className="quarentena-item-content" onClick={() => setExpandedId(isExpanded ? null : item.id)}>
                     <div className="quarentena-item-main">
@@ -359,39 +466,84 @@ export default function QuarentenaPage() {
                           <StatusIconComp size={12} />
                           {statusConf.label}
                         </span>
+                        <span className="quarentena-source-type-tag">
+                          {item.source_type?.toUpperCase() || 'DOCUMENTO'}
+                        </span>
                       </div>
+
                       <div className="quarentena-item-url">
                         {item.source_url ? (
-                          <a
-                            href={item.source_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <ExternalLink size={12} />
-                            {item.source_url.length > 60
-                              ? item.source_url.substring(0, 60) + '...'
-                              : item.source_url}
-                          </a>
+                          item.source_url.startsWith('http') ? (
+                            <a
+                              href={item.source_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <ExternalLink size={12} />
+                              {item.source_url}
+                            </a>
+                          ) : (
+                            <span className="quarentena-title-text">
+                              <FileText size={14} style={{ display: 'inline', marginRight: 6 }} />
+                              {item.source_url}
+                            </span>
+                          )
                         ) : (
-                          <span className="k-text-muted">Sem URL</span>
+                          <span className="k-text-muted">Sugestão sem título</span>
                         )}
                       </div>
+
                       <div className="quarentena-item-meta">
-                        <span>
-                          {entities.length} entidade{entities.length !== 1 ? 's' : ''}
-                        </span>
-                        <span>•</span>
-                        <span>
-                          {cypherQueries.length} quer{cypherQueries.length !== 1 ? 'ies' : 'y'} Cypher
-                        </span>
+                        {item.submitted_by && (
+                          <span>👤 <strong>Sugerido por:</strong> {item.submitted_by}</span>
+                        )}
                         {item.created_at && (
                           <>
                             <span>•</span>
-                            <span>{new Date(item.created_at).toLocaleDateString('pt-BR')}</span>
+                            <span>Enviado em {formatDateBR(item.created_at)}</span>
                           </>
                         )}
                       </div>
+
+                      {/* Feedback Educativo para o Médico / Usuário */}
+                      {!isAdmin && (
+                        <div className="quarentena-user-feedback">
+                          {item.status === 'pending' && (
+                            <div className="quarentena-feedback-box quarentena-feedback--pending">
+                              <Clock size={16} />
+                              <span>Sua sugestão está na fila de curadoria. Assim que o Administrador aprovar, este conhecimento entrará para toda a plataforma.</span>
+                            </div>
+                          )}
+                          {item.status === 'approved' && (
+                            <div className="quarentena-feedback-box quarentena-feedback--approved">
+                              <CheckCircle2 size={16} />
+                              <span>🎉 <strong>Aprovado pelo Administrador!</strong> Este protocolo já foi adicionado ao Grafo Médico Global e está ativo para todos os médicos.</span>
+                            </div>
+                          )}
+                          {item.status === 'rejected' && (
+                            <div className="quarentena-feedback-box quarentena-feedback--rejected">
+                              <XCircle size={16} />
+                              <div>
+                                <div><strong>Não Aprovado pelo Administrador.</strong></div>
+                                {item.reviewer_notes && (
+                                  <div className="quarentena-feedback-notes">
+                                    💬 <em>Motivo da Curadoria:</em> "{item.reviewer_notes}"
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Indicador de Status para o Administrador */}
+                      {isAdmin && item.status === 'rejected' && item.reviewer_notes && (
+                        <div className="quarentena-admin-rejection-note">
+                          <span>Motivo registrado: "{item.reviewer_notes}"</span>
+                          {item.reviewed_by && <small> por {item.reviewed_by}</small>}
+                        </div>
+                      )}
                     </div>
 
                     <div className="quarentena-item-expand">
@@ -399,43 +551,54 @@ export default function QuarentenaPage() {
                     </div>
                   </div>
 
-                  {/* Quick actions */}
-                  {item.status === 'pending' && (
+                  {/* Ações de Aprovação do Admin */}
+                  {isAdmin && item.status === 'pending' && (
                     <div className="quarentena-item-actions">
                       <button
-                        className="k-btn k-btn-ghost quarentena-btn-approve"
+                        className="k-btn k-btn-primary quarentena-btn-action-approve"
                         onClick={() => handleApprove(item.id)}
                         disabled={actionLoading === item.id}
-                        title="Aprovar"
+                        title="Aprovar e Integrar ao Grafo Global"
                         id={`btn-approve-${item.id}`}
                       >
                         {actionLoading === item.id ? (
                           <Loader2 size={16} className="k-animate-spin" />
                         ) : (
-                          <CheckCircle2 size={16} />
+                          <><Check size={14} /> Aprovar</>
                         )}
                       </button>
                       <button
-                        className="k-btn k-btn-ghost quarentena-btn-reject"
-                        onClick={() => handleReject(item.id)}
+                        className="k-btn k-btn-danger quarentena-btn-action-reject"
+                        onClick={() => openRejectModal(item.id)}
                         disabled={actionLoading === item.id}
-                        title="Rejeitar"
+                        title="Rejeitar com Motivo"
                         id={`btn-reject-${item.id}`}
                       >
-                        <XCircle size={16} />
+                        <X size={14} /> Rejeitar
                       </button>
                     </div>
                   )}
                 </div>
 
-                {/* Expanded details */}
+                {/* Detalhes Expandidos */}
                 {isExpanded && (
                   <div className="quarentena-expanded">
-                    {/* Entities */}
+                    {item.raw_text && (
+                      <div className="quarentena-section">
+                        <h4 className="quarentena-section-title">
+                          <FileText size={14} /> Conteúdo / Resumo Enviado
+                        </h4>
+                        <div className="quarentena-raw-text-box">
+                          {item.raw_text}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Entidades Extraídas (se houver) */}
                     {entities.length > 0 && (
                       <div className="quarentena-section">
                         <h4 className="quarentena-section-title">
-                          <Database size={14} /> Entidades Extraídas
+                          <Database size={14} /> Entidades Médicas Mapeadas ({entities.length})
                         </h4>
                         <div className="quarentena-entities">
                           {entities.map((ent, idx) => (
@@ -447,7 +610,7 @@ export default function QuarentenaPage() {
                               <span className="quarentena-entity-type">{ent.type}</span>
                               {ent.properties?.cid10 && (
                                 <span className="quarentena-entity-cid">
-                                  {ent.properties.cid10}
+                                  CID: {ent.properties.cid10}
                                 </span>
                               )}
                             </div>
@@ -456,11 +619,11 @@ export default function QuarentenaPage() {
                       </div>
                     )}
 
-                    {/* Cypher Queries */}
-                    {cypherQueries.length > 0 && (
+                    {/* Queries Cypher (somente Admin) */}
+                    {isAdmin && cypherQueries.length > 0 && (
                       <div className="quarentena-section">
                         <h4 className="quarentena-section-title">
-                          <Code2 size={14} /> Queries Cypher (Preview)
+                          <Code2 size={14} /> Queries Cypher para Inserção no Neo4j
                         </h4>
                         <div className="quarentena-cypher">
                           {cypherQueries.map((q, idx) => (
@@ -469,20 +632,6 @@ export default function QuarentenaPage() {
                         </div>
                       </div>
                     )}
-
-                    {/* Raw JSON */}
-                    <details className="quarentena-raw">
-                      <summary className="k-text-sm k-text-muted">Ver JSON bruto</summary>
-                      <pre className="quarentena-raw-json">
-                        {JSON.stringify(
-                          typeof item.extracted_data === 'string'
-                            ? JSON.parse(item.extracted_data)
-                            : item.extracted_data,
-                          null,
-                          2
-                        )}
-                      </pre>
-                    </details>
                   </div>
                 )}
               </div>
@@ -491,20 +640,178 @@ export default function QuarentenaPage() {
         </div>
       )}
 
-      {/* Confirm Modal */}
+      {/* Modal de Nova Sugestão (Médico) */}
+      {suggestModalOpen && (
+        <div className="quarentena-modal-backdrop">
+          <div className="quarentena-modal-card">
+            <div className="quarentena-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div className="quarentena-modal-icon">
+                  <Sparkles size={20} />
+                </div>
+                <div>
+                  <h3 className="quarentena-modal-title">Sugerir Novo Conhecimento</h3>
+                  <p className="k-text-xs k-text-muted">A curadoria do administrador analisará o material para inserção no Grafo Médico</p>
+                </div>
+              </div>
+              <button
+                className="k-btn k-btn-ghost k-btn-icon"
+                onClick={() => setSuggestModalOpen(false)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateSuggestion} className="quarentena-modal-form">
+              <label className="quarentena-form-label">
+                Título do Protocolo, Artigo ou Bula *
+              </label>
+              <input
+                className="k-input"
+                placeholder="Ex: Protocolo de Manejo Clínico de Dengue 2026"
+                value={suggestForm.title}
+                onChange={(e) => setSuggestForm({ ...suggestForm, title: e.target.value })}
+                required
+              />
+
+              <div className="quarentena-form-row">
+                <div style={{ flex: 1 }}>
+                  <label className="quarentena-form-label">Tipo do Conhecimento</label>
+                  <select
+                    className="k-select"
+                    value={suggestForm.source_type}
+                    onChange={(e) => setSuggestForm({ ...suggestForm, source_type: e.target.value })}
+                  >
+                    <option value="protocolo">Protocolo Clínico</option>
+                    <option value="diretriz">Diretriz Médica</option>
+                    <option value="artigo">Artigo Científico</option>
+                    <option value="bula">Bula de Medicamento</option>
+                    <option value="outro">Outro Documento</option>
+                  </select>
+                </div>
+
+                <div style={{ flex: 2 }}>
+                  <label className="quarentena-form-label">Link / URL da Fonte (Opcional)</label>
+                  <input
+                    className="k-input"
+                    type="url"
+                    placeholder="https://saude.gov.br/... ou link do artigo"
+                    value={suggestForm.source_url}
+                    onChange={(e) => setSuggestForm({ ...suggestForm, source_url: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <label className="quarentena-form-label">
+                Resumo, Texto Principal ou Observações do Médico
+              </label>
+              <textarea
+                className="k-input quarentena-textarea"
+                rows={4}
+                placeholder="Cole aqui os pontos mais importantes, doses recomendadas, contraindicações ou justificativa de uso..."
+                value={suggestForm.content_text}
+                onChange={(e) => setSuggestForm({ ...suggestForm, content_text: e.target.value })}
+              />
+
+              <div className="quarentena-modal-actions">
+                <button
+                  type="button"
+                  className="k-btn k-btn-secondary"
+                  onClick={() => setSuggestModalOpen(false)}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="k-btn k-btn-primary"
+                  disabled={suggesting}
+                >
+                  {suggesting ? (
+                    <><Loader2 size={16} className="k-animate-spin" /> Enviando...</>
+                  ) : (
+                    <><Send size={16} /> Enviar para a Curadoria</>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Rejeição com Motivo (Admin) */}
+      {rejectModal.open && (
+        <div className="quarentena-modal-backdrop">
+          <div className="quarentena-modal-card">
+            <div className="quarentena-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div className="quarentena-modal-icon" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>
+                  <XCircle size={20} />
+                </div>
+                <div>
+                  <h3 className="quarentena-modal-title">Rejeitar Sugestão #{rejectModal.id}</h3>
+                  <p className="k-text-xs k-text-muted">Informe o motivo da não aprovação para orientar o médico autor</p>
+                </div>
+              </div>
+              <button
+                className="k-btn k-btn-ghost k-btn-icon"
+                onClick={() => setRejectModal({ open: false, id: null })}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="quarentena-modal-form">
+              <label className="quarentena-form-label">
+                Motivo / Justificativa da Rejeição:
+              </label>
+              <textarea
+                className="k-input quarentena-textarea"
+                rows={3}
+                placeholder="Ex: Diretriz desatualizada; Favor enviar a versão 2026 publicada pela Sociedade..."
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+              />
+
+              <div className="quarentena-modal-actions">
+                <button
+                  type="button"
+                  className="k-btn k-btn-secondary"
+                  onClick={() => setRejectModal({ open: false, id: null })}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  className="k-btn k-btn-danger"
+                  onClick={handleConfirmReject}
+                  disabled={rejecting}
+                >
+                  {rejecting ? (
+                    <><Loader2 size={16} className="k-animate-spin" /> Registrando...</>
+                  ) : (
+                    <><X size={16} /> Confirmar Rejeição</>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Ação em Massa (Admin) */}
       <ConfirmModal
-        open={modal.open}
-        title={modal.type === 'approve' ? 'Aprovar itens selecionados?' : 'Rejeitar itens selecionados?'}
+        open={confirmModal.open}
+        title={confirmModal.type === 'approve' ? 'Aprovar itens selecionados?' : 'Rejeitar itens selecionados?'}
         message={
-          modal.type === 'approve'
-            ? `${modal.ids.length} ite${modal.ids.length > 1 ? 'ns' : 'm'} ser${modal.ids.length > 1 ? 'ão inseridos' : 'á inserido'} permanentemente no grafo Neo4j.`
-            : `${modal.ids.length} ite${modal.ids.length > 1 ? 'ns' : 'm'} ser${modal.ids.length > 1 ? 'ão descartados' : 'á descartado'} da quarentena.`
+          confirmModal.type === 'approve'
+            ? `${confirmModal.ids.length} ite${confirmModal.ids.length > 1 ? 'ns' : 'm'} ser${confirmModal.ids.length > 1 ? 'ão inseridos' : 'á inserido'} permanentemente no Grafo Médico Global.`
+            : `${confirmModal.ids.length} ite${confirmModal.ids.length > 1 ? 'ns' : 'm'} ser${confirmModal.ids.length > 1 ? 'ão rejeitados' : 'á rejeitado'}.`
         }
-        confirmLabel={modal.type === 'approve' ? 'Aprovar Todos' : 'Rejeitar Todos'}
-        variant={modal.type === 'approve' ? 'warning' : 'danger'}
-        loading={modalLoading}
-        onConfirm={() => handleBulkAction(modal.type)}
-        onCancel={() => setModal({ open: false, type: null, ids: [] })}
+        confirmLabel={confirmModal.type === 'approve' ? 'Aprovar Todos' : 'Rejeitar Todos'}
+        variant={confirmModal.type === 'approve' ? 'warning' : 'danger'}
+        loading={confirmLoading}
+        onConfirm={() => handleBulkAction(confirmModal.type)}
+        onCancel={() => setConfirmModal({ open: false, type: null, ids: [] })}
       />
     </div>
   )

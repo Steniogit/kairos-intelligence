@@ -371,15 +371,41 @@ class QuarantineEntry(BaseModel):
     entities_json: dict = {}
     relationships_json: list = []
     graph_cypher: Optional[str] = None
+    submitted_by: Optional[str] = ""
+
+class RejectPayload(BaseModel):
+    reviewer: Optional[str] = "admin"
+    notes: Optional[str] = ""
+
+class SuggestRequest(BaseModel):
+    title: Optional[str] = ""
+    source_url: Optional[str] = ""
+    content_text: Optional[str] = ""
+    source_type: Optional[str] = "artigo"
+    notes: Optional[str] = ""
 
 
 @app.get("/api/v1/quarantine")
-async def list_quarantine(status: str = "pending", limit: int = 50, conn = Depends(get_tenant_db)):
-    """Lista itens na quarentena de conhecimento."""
-    result = conn.execute(
+async def list_quarantine(status: str = "all", limit: int = 100, conn = Depends(get_tenant_db)):
+    """Lista itens na quarentena de conhecimento com todos os metadados."""
+    if status == "all" or not status:
+        result = conn.execute(
             text("""
-                SELECT id, source_url, source_type, entities_json,
-                       relationships_json, status, created_at
+                SELECT id, source_url, source_type, raw_text, entities_json,
+                       relationships_json, graph_cypher, status, submitted_by,
+                       reviewer_notes, reviewed_by, reviewed_at, created_at
+                FROM knowledge_quarantine
+                ORDER BY created_at DESC
+                LIMIT :limit
+            """),
+            {"limit": limit}
+        )
+    else:
+        result = conn.execute(
+            text("""
+                SELECT id, source_url, source_type, raw_text, entities_json,
+                       relationships_json, graph_cypher, status, submitted_by,
+                       reviewer_notes, reviewed_by, reviewed_at, created_at
                 FROM knowledge_quarantine
                 WHERE status = :status
                 ORDER BY created_at DESC
@@ -388,11 +414,57 @@ async def list_quarantine(status: str = "pending", limit: int = 50, conn = Depen
             {"status": status, "limit": limit}
         )
     items = [dict(row._mapping) for row in result]
-    # Serialize datetime
     for item in items:
         if item.get("created_at"):
             item["created_at"] = item["created_at"].isoformat()
+        if item.get("reviewed_at"):
+            item["reviewed_at"] = item["reviewed_at"].isoformat()
+        
+        ent = item.get("entities_json")
+        entities_list = ent if isinstance(ent, list) else (ent.get("entities", []) if isinstance(ent, dict) else [])
+        rels = item.get("relationships_json") or []
+        cypher_lines = [l.strip() for l in (item.get("graph_cypher") or "").splitlines() if l.strip()]
+        
+        item["extracted_data"] = {
+            "entities": entities_list,
+            "relationships": rels,
+            "cypher_queries": cypher_lines
+        }
     return {"items": items, "count": len(items)}
+
+
+@app.post("/api/v1/quarantine/suggest")
+async def suggest_knowledge(data: SuggestRequest, request: Request, conn = Depends(get_tenant_db)):
+    """Permite que medicos enviem sugestoes de conhecimento para a biblioteca."""
+    submitted_by = "Medico"
+    try:
+        auth = request.headers.get("authorization", "")
+        if auth.startswith("Bearer "):
+            from jose import jwt
+            token_data = jwt.decode(auth[7:], options={"verify_signature": False})
+            submitted_by = f"{token_data.get('name', 'Medico')} (CRM: {token_data.get('crm', 'N/I')})"
+    except Exception:
+        pass
+
+    url_or_title = (data.source_url or data.title or "Sugestao Medica").strip()
+    raw = (data.content_text or data.notes or "").strip()
+
+    row = conn.execute(
+        text("""
+            INSERT INTO knowledge_quarantine
+            (source_url, source_type, raw_text, status, submitted_by, created_at)
+            VALUES (:url, :type, :raw, 'pending', :submitted_by, NOW())
+            RETURNING id, created_at
+        """),
+        {
+            "url": url_or_title,
+            "type": data.source_type or "artigo",
+            "raw": raw,
+            "submitted_by": submitted_by
+        }
+    ).fetchone()
+    conn.commit()
+    return {"status": "queued", "id": row[0], "created_at": str(row[1])}
 
 
 @app.post("/api/v1/quarantine")
@@ -402,8 +474,8 @@ async def add_to_quarantine(entry: QuarantineEntry, conn = Depends(get_tenant_db
         conn.execute(
             text("""
                 INSERT INTO knowledge_quarantine
-                (source_url, source_type, raw_text, entities_json, relationships_json, graph_cypher)
-                VALUES (:url, :type, :raw, :entities, :rels, :cypher)
+                (source_url, source_type, raw_text, entities_json, relationships_json, graph_cypher, submitted_by)
+                VALUES (:url, :type, :raw, :entities, :rels, :cypher, :submitted_by)
             """),
             {
                 "url": entry.source_url,
@@ -412,6 +484,7 @@ async def add_to_quarantine(entry: QuarantineEntry, conn = Depends(get_tenant_db
                 "entities": json.dumps(entry.entities_json),
                 "rels": json.dumps(entry.relationships_json),
                 "cypher": entry.graph_cypher,
+                "submitted_by": entry.submitted_by or "Sistema"
             }
         )
         conn.commit()
@@ -424,12 +497,11 @@ async def add_to_quarantine(entry: QuarantineEntry, conn = Depends(get_tenant_db
 
 @app.post("/api/v1/quarantine/{item_id}/approve")
 async def approve_quarantine(item_id: int, reviewer: str = "admin", conn = Depends(get_tenant_db), tenant_slug: str = Depends(get_tenant_slug)):
-    """Aprova um item da quarentena e ingere no grafo Neo4j."""
+    """Aprova um item da quarentena e ingere no grafo Neo4j global."""
     if not neo4j_driver:
         raise HTTPException(status_code=503, detail="Neo4j nao disponivel")
 
     try:
-        # Busca o item
         result = conn.execute(
             text("SELECT * FROM knowledge_quarantine WHERE id = :id"),
             {"id": item_id}
@@ -439,9 +511,8 @@ async def approve_quarantine(item_id: int, reviewer: str = "admin", conn = Depen
             raise HTTPException(status_code=404, detail="Item nao encontrado")
 
         row_dict = dict(row._mapping)
-        cypher_lines = row_dict.get("graph_cypher", "").splitlines()
+        cypher_lines = (row_dict.get("graph_cypher") or "").splitlines()
 
-        # Executa no Neo4j se houver cypher
         if cypher_lines:
             with neo4j_driver.session() as session:
                 for line in cypher_lines:
@@ -450,7 +521,6 @@ async def approve_quarantine(item_id: int, reviewer: str = "admin", conn = Depen
                         session.run(cypher)
                 logger.info(f"Quarantine #{item_id} merged into Neo4j")
         
-        # Atualiza status
         conn.execute(
             text("""
                 UPDATE knowledge_quarantine
@@ -473,8 +543,16 @@ async def approve_quarantine(item_id: int, reviewer: str = "admin", conn = Depen
 
 
 @app.post("/api/v1/quarantine/{item_id}/reject")
-async def reject_quarantine(item_id: int, reviewer: str = "admin", notes: str = "", conn = Depends(get_tenant_db)):
-    """Rejeita um item da quarentena."""
+async def reject_quarantine(
+    item_id: int, 
+    data: Optional[RejectPayload] = None, 
+    reviewer: str = "admin", 
+    notes: str = "", 
+    conn = Depends(get_tenant_db)
+):
+    """Rejeita um item da quarentena salvando o motivo/justificativa."""
+    rev = (data.reviewer if data and data.reviewer else reviewer) or "admin"
+    reason = (data.notes if data and data.notes else notes) or "Nao aprovado pela curadoria central."
     try:
         conn.execute(
             text("""
@@ -483,13 +561,13 @@ async def reject_quarantine(item_id: int, reviewer: str = "admin", notes: str = 
                     reviewer_notes = :notes, reviewed_at = NOW()
                 WHERE id = :id
             """),
-            {"id": item_id, "reviewer": reviewer, "notes": notes}
+            {"id": item_id, "reviewer": rev, "notes": reason}
         )
         conn.commit()
     except Exception as e:
         conn.rollback()
         raise HTTPException(status_code=500, detail="Erro ao rejeitar item")
-    return {"status": "rejected", "id": item_id}
+    return {"status": "rejected", "id": item_id, "notes": reason}
 
 
 # ═══════════════════════════════════════════════════════════
