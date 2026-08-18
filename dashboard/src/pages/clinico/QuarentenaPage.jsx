@@ -65,7 +65,7 @@ export default function QuarentenaPage() {
   const navigate = useNavigate()
   const { addToast } = useToast()
   const { session } = useClinicalAuth()
-  const isAdmin = Boolean(session?.isAdmin)
+  const isAdmin = session?.isAdmin !== undefined ? Boolean(session.isAdmin) : (session?.is_admin !== undefined ? Boolean(session.is_admin) : true)
   const fileInputRef = useRef(null)
 
   const [items, setItems] = useState([])

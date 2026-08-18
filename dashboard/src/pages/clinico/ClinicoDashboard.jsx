@@ -1,8 +1,3 @@
-/* ============================================================
-   ClinicoDashboard — Visão geral do Módulo Clínico
-   Hero + Stats + Action Cards
-   ============================================================ */
-
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -21,6 +16,7 @@ import {
   Search,
   Plus,
   Clock,
+  BookOpen
 } from 'lucide-react'
 import { useClinicalAuth } from '../../components/ClinicalAuthGate'
 import { clinicalHealth, fetchQuarantine, listCopilotSessions } from '../../services/clinicalApi'
@@ -29,10 +25,10 @@ import './ClinicoDashboard.css'
 
 const ACTION_CARDS = [
   {
-    id: 'nova-consulta',
+    id: 'novo-atendimento',
     icon: Mic,
-    title: 'Nova Consulta',
-    description: 'Iniciar consulta com copiloto IA em tempo real',
+    title: 'Novo Atendimento',
+    description: 'Iniciar atendimento com copiloto IA em tempo real',
     path: '/clinico/consulta',
     gradient: 'linear-gradient(135deg, #10b981, #14b8a6)',
     glow: 'rgba(16, 185, 129, 0.2)',
@@ -48,9 +44,9 @@ const ACTION_CARDS = [
   },
   {
     id: 'quarentena',
-    icon: ShieldAlert,
-    title: 'Quarentena do Grafo',
-    description: 'Revisar e aprovar entidades médicas extraídas',
+    icon: BookOpen,
+    title: 'Inclusão de Novos Conhecimentos na Biblioteca',
+    description: 'Envio, curadoria e aprovação de protocolos e diretrizes médicas',
     path: '/clinico/quarentena',
     gradient: 'linear-gradient(135deg, #f59e0b, #d97706)',
     glow: 'rgba(245, 158, 11, 0.2)',
@@ -99,11 +95,10 @@ export default function ClinicoDashboard() {
       }
 
       try {
-        // Quarantine count
-        const quarantine = await fetchQuarantine()
-        const pending = Array.isArray(quarantine)
-          ? quarantine.filter((q) => q.status === 'pending').length
-          : 0
+        // Quarantine count (extrai items do objeto retornado)
+        const quarantine = await fetchQuarantine('all')
+        const itemsList = Array.isArray(quarantine) ? quarantine : (quarantine?.items || [])
+        const pending = itemsList.filter((q) => q.status === 'pending').length
         setStats((prev) => ({ ...prev, quarentinePending: pending }))
       } catch {
         // Silently ignore
@@ -146,7 +141,6 @@ export default function ClinicoDashboard() {
             Consultas Médicas/Avaliação
           </p>
         </div>
-        
       </div>
 
       {/* Hero Card */}
@@ -157,7 +151,7 @@ export default function ClinicoDashboard() {
             <Stethoscope size={28} />
           </div>
           <div className="clinico-hero-text">
-            <h3>Bem-vindo, {session.doctorName}</h3>
+            <h3>Bem-vindo, {session?.name || session?.doctorName || 'Dr(a).'}</h3>
             <p>
               O módulo clínico integra IA generativa com o seu atendimento.
               Transcrição em tempo real, estruturação SOAP automática e geração
@@ -187,9 +181,9 @@ export default function ClinicoDashboard() {
           </div>
         </div>
 
-        <div className="k-stat-card">
+        <div className="k-stat-card" onClick={() => navigate('/clinico/quarentena')} style={{ cursor: 'pointer' }}>
           <div className="k-stat-icon" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#f59e0b' }}>
-            <ShieldAlert size={22} />
+            <BookOpen size={22} />
           </div>
           <div>
             <div className="k-stat-value">

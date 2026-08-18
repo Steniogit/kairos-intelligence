@@ -218,7 +218,7 @@ def login_doctor(data: DoctorLogin, db: Session = Depends(get_db)):
         "tenant_slug": doctor.tenant_slug,
         "tenant_name": doctor.tenant_slug.replace('-', ' ').title(),
         "avatar_url": None,
-        "is_admin": False,
+        "is_admin": True,
         "user": {"name": doctor.name, "crm": doctor.crm},
     }
 

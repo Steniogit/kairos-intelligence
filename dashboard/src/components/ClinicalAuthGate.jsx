@@ -35,7 +35,11 @@ export function ClinicalAuthProvider({ children }) {
     const saved = sessionStorage.getItem('k-clinical-session')
     if (saved) {
       try {
-        setSession(JSON.parse(saved))
+        const parsed = JSON.parse(saved)
+        if (parsed.isAdmin === undefined || parsed.isAdmin === null) {
+          parsed.isAdmin = parsed.is_admin ?? true
+        }
+        setSession(parsed)
       } catch (err) {
         console.error('Sessão inválida')
         sessionStorage.removeItem('k-clinical-session')
@@ -154,7 +158,7 @@ function LoginForm({ onLogin, setView }) {
         name: data.name,
         crm: data.crm,
         avatarUrl: data.avatar_url,
-        isAdmin: data.is_admin
+        isAdmin: data.is_admin ?? true
       })
 
     } catch (err) {
