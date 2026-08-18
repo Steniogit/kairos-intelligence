@@ -525,10 +525,31 @@ export default function QuarentenaPage() {
                           <StatusIconComp size={12} />
                           {statusConf.label}
                         </span>
+                        {item.duplicate_warning?.is_duplicate && (
+                          <span className="k-badge quarentena-duplicate-badge" title="Documento com título ou arquivo semelhante já registrado">
+                            <AlertTriangle size={12} />
+                            Possível Duplicidade
+                          </span>
+                        )}
                         <span className="quarentena-source-type-tag">
                           {item.source_type?.toUpperCase() || 'DOCUMENTO'}
                         </span>
                       </div>
+
+                      {/* Alerta de Duplicidade em Destaque */}
+                      {item.duplicate_warning?.is_duplicate && (
+                        <div className="quarentena-duplicate-alert" onClick={(e) => e.stopPropagation()}>
+                          <AlertTriangle size={16} className="quarentena-duplicate-icon" />
+                          <div className="quarentena-duplicate-text">
+                            <strong>⚠️ Aviso de Duplicidade:</strong> Um documento com fonte ou arquivo semelhante (<em>"{item.duplicate_warning.existing_title}"</em>) já foi registrado anteriormente
+                            {item.duplicate_warning.existing_submitted_by ? ` por ${item.duplicate_warning.existing_submitted_by}` : ''}
+                            {item.duplicate_warning.existing_date ? ` em ${item.duplicate_warning.existing_date}` : ''}
+                            <span className="quarentena-dup-status-tag">
+                              {item.duplicate_warning.existing_status === 'approved' ? ' (Já Aprovado no Grafo)' : ' (Em Análise)'}
+                            </span>.
+                          </div>
+                        </div>
+                      )}
 
                       <div className="quarentena-item-url">
                         {item.source_url ? (

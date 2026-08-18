@@ -417,7 +417,7 @@ class RejectPayload(BaseModel):
 
 @app.get("/api/v1/quarantine")
 async def list_quarantine(status: str = "all", limit: int = 100, conn = Depends(get_tenant_db)):
-    """Lista itens na quarentena de conhecimento com suporte a arquivos anexos."""
+    """Lista itens na quarentena com deteccao inteligente de duplicidade."""
     if status == "all" or not status:
         result = conn.execute(
             text("""
@@ -446,6 +446,21 @@ async def list_quarantine(status: str = "all", limit: int = 100, conn = Depends(
             {"status": status, "limit": limit}
         )
     items = [dict(row._mapping) for row in result]
+
+    # Carrega todos os itens cadastrados para checagem cruzada de duplicidades
+    all_rows = conn.execute(
+        text("SELECT id, source_url, file_name, status, submitted_by, created_at FROM knowledge_quarantine ORDER BY id ASC")
+    ).fetchall()
+    all_lookup = [dict(r._mapping) for r in all_rows]
+
+    import unicodedata
+
+    def norm(s):
+        if not s:
+            return ""
+        s = unicodedata.normalize('NFKD', str(s)).encode('ASCII', 'ignore').decode('ASCII').lower().strip()
+        return re.sub(r'[^a-z0-9]', '', s)
+
     for item in items:
         if item.get("created_at"):
             item["created_at"] = item["created_at"].isoformat()
@@ -462,6 +477,37 @@ async def list_quarantine(status: str = "all", limit: int = 100, conn = Depends(
             "relationships": rels,
             "cypher_queries": cypher_lines
         }
+
+        # Deteccao de duplicidades
+        item_id = item.get("id")
+        item_url_norm = norm(item.get("source_url"))
+        item_file_norm = norm(item.get("file_name"))
+
+        dup_found = None
+        for other in all_lookup:
+            if other["id"] == item_id:
+                continue
+            other_url_norm = norm(other.get("source_url"))
+            other_file_norm = norm(other.get("file_name"))
+
+            is_url_dup = bool(item_url_norm and len(item_url_norm) >= 4 and item_url_norm == other_url_norm)
+            is_file_dup = bool(item_file_norm and len(item_file_norm) >= 4 and item_file_norm == other_file_norm)
+
+            if is_url_dup or is_file_dup:
+                dup_found = {
+                    "is_duplicate": True,
+                    "existing_id": other["id"],
+                    "existing_title": other.get("source_url") or other.get("file_name") or "Sem título",
+                    "existing_status": other.get("status", "pending"),
+                    "existing_submitted_by": other.get("submitted_by", ""),
+                    "existing_date": other.get("created_at").strftime("%d/%m/%Y") if other.get("created_at") else ""
+                }
+                # Se encontrar um ja aprovado, prioriza esse alerta
+                if other.get("status") == "approved":
+                    break
+
+        item["duplicate_warning"] = dup_found
+
     return {"items": items, "count": len(items)}
 
 

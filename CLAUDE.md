@@ -98,6 +98,10 @@ docker logs -f --tail 100 kairos-dashboard
 
 ## 📂 Armazenamento de Arquivos & Proxy MinIO
 
+4. **Detector de Duplicidade Inteligente:**
+   - O backend cruza títulos, URLs e nomes de arquivos normalizados (sem acentos e pontuações).
+   - Na Quarentena, exibe um alerta visual âmbar e badge de `⚠️ Possível Duplicidade` informando quem já enviou documento idêntico/similar e seu status.
+
 3. **Upload de Documentos para Biblioteca de Conhecimentos:**
    - Endpoint: `POST /api/v1/quarantine/suggest`
    - Suporta upload multi-formato (`.pdf, .docx, .doc, .txt, .rtf, .md, .csv, .xlsx, .json, .tsv`) até 50MB.
