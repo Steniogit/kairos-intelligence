@@ -147,11 +147,29 @@
   cursor: not-allowed;
 }
 
-.clinical-auth-footer {
-  font-size: 0.75rem;
+.clinical-auth-links {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--k-space-xl);
+  padding: 0 10px;
+}
+
+.clinical-auth-links button {
+  font-size: 0.8125rem;
   color: var(--k-text-muted);
-  margin-top: var(--k-space-lg);
-  text-align: center;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  padding: 8px;
+  cursor: pointer;
+  transition: color var(--k-transition-fast);
+  text-decoration: none;
+  box-shadow: none !important;
+}
+
+.clinical-auth-links button:hover {
+  color: #10b981;
 }
 
 /* ═══ Loading state ═══ */

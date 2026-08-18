@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 /* ============================================================
    ConsultaPage — Página de Consulta Médica com Copiloto IA
    Wizard de 4 etapas:
@@ -8,50 +9,9 @@
    ============================================================ */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import {
-  Loader2,
-  CheckCircle2,
-  XCircle,
-  Mic,
-  MicOff,
-  Pause,
-  Play,
-  Square,
-  Clock,
-  Wifi,
-  WifiOff,
-  AlertTriangle,
-  Volume2,
-  Lightbulb,
-  FileText,
-  Printer,
-  Copy,
-  Check,
-  RefreshCw,
-  ArrowRight,
-  ArrowLeft,
-  Database,
-  Brain,
-  HardDrive,
-  Server,
-  Shield,
-  Sparkles,
-  MessageSquare,
-  ClipboardList,
-  Stethoscope,
-  FilePlus,
-  FileCheck,
-  Send,
-  ChevronRight,
-  Trash2,
-  Download,
-  User,
-  Search,
-  X,
-  Edit3,
-} from 'lucide-react'
+import {Loader2, CheckCircle2, XCircle, Mic, MicOff, Pause, Play, Square, Clock, Wifi, WifiOff, AlertTriangle, Volume2, Lightbulb, FileText, Printer, Copy, Check, RefreshCw, ArrowRight, ArrowLeft, Database, Brain, HardDrive, Server, Shield, Sparkles, MessageSquare, ClipboardList, Stethoscope, FilePlus, FileCheck, Send, ChevronRight, Trash2, Download, User, Search, X, Edit3, UserPlus, Upload, Eye, Plus} from 'lucide-react'
 import { useClinicalAuth } from '../../components/ClinicalAuthGate'
-import clinicalApi, { runPreflight, getCopilotWSUrl, generateBatch, searchPatients, saveConsultation } from '../../services/clinicalApi'
+import clinicalApi, { runPreflight, getCopilotWSUrl, generateBatch, searchPatients, saveConsultation , uploadPatientFile, listPatientFiles, getFileDownloadUrl, deletePatientFile, createPatient} from '../../services/clinicalApi'
 import { useToast } from '../../components/Toast'
 import ConfirmModal from '../../components/ConfirmModal'
 import './ConsultaPage.css'
@@ -59,9 +19,9 @@ import './ConsultaPage.css'
 // ═══ Constantes ═════════════════════════════════════════════
 const PREFLIGHT_CHECKS = [
   { key: 'postgres',         label: 'Prontuários',          icon: Database,   critical: true  },
-  { key: 'neo4j',            label: 'Base de Conhecimento', icon: Server,     critical: false },
+  { key: 'neo4j',            label: 'Assistente de IA', icon: Server,     critical: false },
   { key: 'chromadb',         label: 'Busca Inteligente',    icon: Brain,      critical: false },
-  { key: 'gemini',           label: 'Ademed IA',            icon: Sparkles,   critical: true  },
+  { key: 'gemini',           label: 'Admed IA',            icon: Sparkles,   critical: true  },
   { key: 'tmpfs',            label: 'Armazenamento Seguro', icon: HardDrive,  critical: false },
   { key: 'write_permission', label: 'Proteção de Dados',    icon: Shield,     critical: false },
 ]
@@ -89,10 +49,10 @@ const SOAP_COLORS = {
 }
 
 const SOAP_LABELS = {
-  S: 'Resumo',
-  O: 'Diagnóstico',
+  S: 'Subjetivo',
+  O: 'Objetivo',
   A: 'Avaliação',
-  P: 'Conduta',
+  P: 'Plano',
 }
 
 // ═══ Helpers ════════════════════════════════════════════════
@@ -182,6 +142,12 @@ function SoapMiniCard({ letter, content, updating }) {
  * automática de documentos médicos.
  */
 export default function ConsultaPage() {
+  const formatDateBR = (dateStr) => {
+    if (!dateStr) return '';
+    if (dateStr.includes('-')) return dateStr.split('-').reverse().join('/');
+    return dateStr;
+  };
+
   const { session } = useClinicalAuth()
   const { addToast } = useToast()
 
@@ -230,6 +196,17 @@ export default function ConsultaPage() {
   const [patientSearch, setPatientSearch] = useState('')
   const [patientResults, setPatientResults] = useState([])
   const [patientSearching, setPatientSearching] = useState(false)
+  const [showNewPatientForm, setShowNewPatientForm] = useState(false)
+  const [newPatientName, setNewPatientName] = useState('')
+  const [newPatientCpf, setNewPatientCpf] = useState('')
+  const [newPatientBirth, setNewPatientBirth] = useState('')
+  const [savingPatient, setSavingPatient] = useState(false)
+  const [patientFiles, setPatientFiles] = useState([])
+  const [loadingFiles, setLoadingFiles] = useState(false)
+  const [showUploadForm, setShowUploadForm] = useState(false)
+  const [uploadFileType, setUploadFileType] = useState('outro')
+  const [uploadDescription, setUploadDescription] = useState('')
+  const [uploading, setUploading] = useState(false)
 
   // ─── Preview de Documento ─────────────────────────────────
   const [previewDoc, setPreviewDoc] = useState(null) // {index, type, title}
@@ -276,10 +253,116 @@ export default function ConsultaPage() {
     }, 400)
   }, [])
 
-  const handleSelectPatient = useCallback((patient) => {
+    // ═══ Cadastro de Paciente ═══════════════════════════════
+  const formatCpf = (value) => {
+    const digits = value.replace(/\D/g, '').slice(0, 11)
+    if (digits.length <= 3) return digits
+    if (digits.length <= 6) return `${digits.slice(0,3)}.${digits.slice(3)}`
+    if (digits.length <= 9) return `${digits.slice(0,3)}.${digits.slice(3,6)}.${digits.slice(6)}`
+    return `${digits.slice(0,3)}.${digits.slice(3,6)}.${digits.slice(6,9)}-${digits.slice(9)}`
+  }
+
+  const handleCreatePatient = async () => {
+    if (!newPatientName.trim() || !newPatientCpf.trim() || !newPatientBirth.trim()) {
+      addToast('Preencha todos os campos obrigatórios.', 'warning')
+      return
+    }
+    setSavingPatient(true)
+    try {
+      const patient = await createPatient({
+        name: newPatientName.trim(),
+        cpf: newPatientCpf.trim(),
+        birth_date: newPatientBirth,
+        sex: 'N',
+      })
+      setSelectedPatient(patient)
+      setShowNewPatientForm(false)
+      setNewPatientName('')
+      setNewPatientCpf('')
+      setNewPatientBirth('')
+      setPatientSearch('')
+      setPatientResults([])
+      addToast(`Paciente ${patient.name} cadastrado com sucesso!`, 'success')
+      loadPatientFiles(patient.id)
+    } catch (err) {
+      addToast('Erro ao cadastrar paciente: ' + (err?.response?.data?.detail || err.message), 'error')
+    } finally {
+      setSavingPatient(false)
+    }
+  }
+
+  // ═══ Arquivos do Paciente ═══════════════════════════════
+  const loadPatientFiles = async (patientId) => {
+    if (!patientId) return
+    setLoadingFiles(true)
+    try {
+      const files = await listPatientFiles(patientId)
+      setPatientFiles(files)
+    } catch (err) {
+      setPatientFiles([])
+    } finally {
+      setLoadingFiles(false)
+    }
+  }
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file || !selectedPatient) return
+    setUploading(true)
+    try {
+      await uploadPatientFile(selectedPatient.id, file, uploadFileType, uploadDescription)
+      addToast('Arquivo anexado com sucesso!', 'success')
+      setShowUploadForm(false)
+      setUploadFileType('outro')
+      setUploadDescription('')
+      loadPatientFiles(selectedPatient.id)
+    } catch (err) {
+      addToast('Erro ao enviar arquivo: ' + (err?.response?.data?.detail || err.message), 'error')
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  const handleViewFile = async (fileId) => {
+    try {
+      const { url } = await getFileDownloadUrl(fileId)
+      window.open(url, '_blank')
+    } catch (err) {
+      addToast('Erro ao abrir arquivo.', 'error')
+    }
+  }
+
+  const handleDeleteFile = async (fileId) => {
+    if (!confirm('Deseja realmente excluir este arquivo?')) return
+    try {
+      await deletePatientFile(fileId)
+      addToast('Arquivo removido.', 'success')
+      loadPatientFiles(selectedPatient.id)
+    } catch (err) {
+      addToast('Erro ao remover arquivo.', 'error')
+    }
+  }
+
+  const formatFileSize = (bytes) => {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+
+  const fileTypeLabels = {
+    exame_lab: 'Exame Laboratorial',
+    exame_imagem: 'Exame de Imagem',
+    laudo: 'Laudo Médico',
+    receita: 'Receita',
+    outro: 'Outro',
+  }
+
+const handleSelectPatient = useCallback((patient) => {
     setSelectedPatient(patient)
     setPatientSearch('')
     setPatientResults([])
+    loadPatientFiles(patient.id)
   }, [])
 
   // ═══ Preview e PDF de Documento ════════════════════════════
@@ -316,7 +399,7 @@ export default function ConsultaPage() {
         pdf.text(`Paciente: ${selectedPatient.name}`, margin, y)
         y += 5
         if (selectedPatient.cpf) { pdf.text(`CPF: ${selectedPatient.cpf}`, margin, y); y += 5 }
-        if (selectedPatient.birth_date) { pdf.text(`Nasc.: ${selectedPatient.birth_date}`, margin, y); y += 5 }
+        if (selectedPatient.birth_date) { pdf.text(`Nasc.: ${formatDateBR(selectedPatient.birth_date)}`, margin, y); y += 5 }
         if (selectedPatient.sex && selectedPatient.sex !== 'N') {
           pdf.text(`Sexo: ${selectedPatient.sex === 'M' ? 'Masculino' : 'Feminino'}`, margin, y)
           y += 5
@@ -1126,26 +1209,108 @@ export default function ConsultaPage() {
           </h4>
 
           {selectedPatient ? (
-            <div className="consulta-patient-selected">
-              <div className="consulta-patient-info">
-                <div className="consulta-patient-name">
-                  <User size={16} /> {selectedPatient.name}
+            <>
+              <div className="consulta-patient-selected">
+                <div className="consulta-patient-info">
+                  <div className="consulta-patient-name">
+                    <User size={16} /> {selectedPatient.name}
+                  </div>
+                  <div className="consulta-patient-details">
+                    {selectedPatient.cpf && <span>CPF: {selectedPatient.cpf}</span>}
+                    {selectedPatient.sex && selectedPatient.sex !== 'N' && (
+                      <span>Sexo: {selectedPatient.sex === 'M' ? 'Masculino' : 'Feminino'}</span>
+                    )}
+                    {selectedPatient.birth_date && <span>Nasc.: {formatDateBR(selectedPatient.birth_date)}</span>}
+                  </div>
                 </div>
-                <div className="consulta-patient-details">
-                  {selectedPatient.cpf && <span>CPF: {selectedPatient.cpf}</span>}
-                  {selectedPatient.sex && selectedPatient.sex !== 'N' && (
-                    <span>Sexo: {selectedPatient.sex === 'M' ? 'Masculino' : 'Feminino'}</span>
-                  )}
-                  {selectedPatient.birth_date && <span>Nasc.: {selectedPatient.birth_date}</span>}
-                </div>
+                <button
+                  className="k-btn k-btn-ghost k-btn-sm"
+                  onClick={() => { setSelectedPatient(null); setPatientFiles([]); }}
+                >
+                  <X size={14} /> Trocar
+                </button>
               </div>
-              <button
-                className="k-btn k-btn-ghost k-btn-sm"
-                onClick={() => setSelectedPatient(null)}
-              >
-                <X size={14} /> Trocar
-              </button>
-            </div>
+
+              {/* Arquivos do Paciente */}
+              <div style={{ marginTop: 16, padding: '16px', background: 'var(--k-surface-alt, rgba(255,255,255,0.03))', borderRadius: 12, border: '1px solid var(--k-border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <h5 style={{ margin: 0, fontSize: '0.875rem', color: 'var(--k-text-main)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <FileText size={16} /> Arquivos do Paciente ({patientFiles.length})
+                  </h5>
+                  <button
+                    className="k-btn k-btn-ghost k-btn-sm"
+                    onClick={() => setShowUploadForm(!showUploadForm)}
+                    style={{ fontSize: '0.75rem' }}
+                  >
+                    <Plus size={14} /> Anexar
+                  </button>
+                </div>
+
+                {showUploadForm && (
+                  <div style={{ padding: 12, marginBottom: 12, background: 'var(--k-bg-elevated, rgba(0,0,0,0.2))', borderRadius: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <select
+                      value={uploadFileType}
+                      onChange={e => setUploadFileType(e.target.value)}
+                      style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid var(--k-border)', background: 'var(--k-surface)', color: 'var(--k-text-main)', fontSize: '0.8125rem' }}
+                    >
+                      <option value="exame_lab">Exame Laboratorial</option>
+                      <option value="exame_imagem">Exame de Imagem</option>
+                      <option value="laudo">Laudo Médico</option>
+                      <option value="receita">Receita</option>
+                      <option value="outro">Outro</option>
+                    </select>
+                    <input
+                      type="text"
+                      placeholder="Descrição (opcional)"
+                      value={uploadDescription}
+                      onChange={e => setUploadDescription(e.target.value)}
+                      style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid var(--k-border)', background: 'var(--k-surface)', color: 'var(--k-text-main)', fontSize: '0.8125rem' }}
+                    />
+                    <label
+                      className="k-btn k-btn-secondary k-btn-sm"
+                      style={{ cursor: 'pointer', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                    >
+                      <Upload size={14} /> {uploading ? 'Enviando...' : 'Selecionar Arquivo'}
+                      <input type="file" hidden onChange={handleFileUpload} disabled={uploading} accept=".pdf,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.dicom,.dcm,.doc,.docx" />
+                    </label>
+                  </div>
+                )}
+
+                {loadingFiles ? (
+                  <div style={{ textAlign: 'center', padding: 16, color: 'var(--k-text-muted)', fontSize: '0.8125rem' }}>
+                    <Loader2 size={16} className="k-animate-spin" style={{ marginRight: 8 }} /> Carregando arquivos...
+                  </div>
+                ) : patientFiles.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: 16, color: 'var(--k-text-muted)', fontSize: '0.8125rem' }}>
+                    Nenhum arquivo anexado.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {patientFiles.map(f => (
+                      <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: 'var(--k-bg-elevated, rgba(0,0,0,0.15))', borderRadius: 8, fontSize: '0.8125rem' }}>
+                        <FileText size={14} style={{ color: 'var(--k-accent)', flexShrink: 0 }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ color: 'var(--k-text-main)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {f.file_name}
+                          </div>
+                          <div style={{ color: 'var(--k-text-muted)', fontSize: '0.6875rem', display: 'flex', gap: 8 }}>
+                            <span>{fileTypeLabels[f.file_type] || f.file_type}</span>
+                            <span>{formatFileSize(f.file_size)}</span>
+                            <span>{new Date(f.created_at).toLocaleDateString('pt-BR')}</span>
+                          </div>
+                        </div>
+                        <button className="k-btn k-btn-ghost k-btn-sm" onClick={() => handleViewFile(f.id)} title="Visualizar" style={{ padding: 4 }}>
+                          <Eye size={14} />
+                        </button>
+                        <button className="k-btn k-btn-ghost k-btn-sm" onClick={() => handleDeleteFile(f.id)} title="Excluir" style={{ padding: 4, color: 'var(--k-danger, #ef4444)' }}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
           ) : (
             <div className="consulta-patient-search">
               <div className="consulta-patient-input-wrap">
@@ -1177,16 +1342,73 @@ export default function ConsultaPage() {
                         </span>
                       )}
                       {p.birth_date && (
-                        <span className="consulta-patient-result-birth">{p.birth_date}</span>
+                        <span className="consulta-patient-result-birth">{formatDateBR(p.birth_date)}</span>
                       )}
                     </button>
                   ))}
                 </div>
               )}
+
+              {/* Botao cadastrar novo paciente */}
+              {patientSearch.length >= 2 && !patientSearching && patientResults.length === 0 && !showNewPatientForm && (
+                <button
+                  className="k-btn k-btn-secondary k-btn-sm"
+                  style={{ marginTop: 12, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                  onClick={() => { setShowNewPatientForm(true); setNewPatientName(patientSearch); }}
+                >
+                  <UserPlus size={14} /> Cadastrar Novo Paciente
+                </button>
+              )}
+
+              {/* Formulario de cadastro rapido */}
+              {showNewPatientForm && (
+                <div style={{ marginTop: 12, padding: 16, background: 'var(--k-bg-elevated, rgba(0,0,0,0.2))', borderRadius: 10, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <h5 style={{ margin: 0, fontSize: '0.875rem', color: 'var(--k-text-main)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <UserPlus size={16} /> Novo Paciente
+                  </h5>
+                  <input
+                    type="text"
+                    placeholder="Nome Completo *"
+                    value={newPatientName}
+                    onChange={e => setNewPatientName(e.target.value)}
+                    style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid var(--k-border)', background: 'var(--k-surface)', color: 'var(--k-text-main)', fontSize: '0.875rem' }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="CPF *"
+                    value={newPatientCpf}
+                    onChange={e => setNewPatientCpf(formatCpf(e.target.value))}
+                    maxLength={14}
+                    style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid var(--k-border)', background: 'var(--k-surface)', color: 'var(--k-text-main)', fontSize: '0.875rem' }}
+                  />
+                  <input
+                    type="date"
+                    placeholder="Data de Nascimento *"
+                    value={newPatientBirth}
+                    onChange={e => setNewPatientBirth(e.target.value)}
+                    style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid var(--k-border)', background: 'var(--k-surface)', color: 'var(--k-text-main)', fontSize: '0.875rem' }}
+                  />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      className="k-btn k-btn-primary k-btn-sm"
+                      onClick={handleCreatePatient}
+                      disabled={savingPatient}
+                      style={{ flex: 1 }}
+                    >
+                      {savingPatient ? 'Salvando...' : 'Cadastrar'}
+                    </button>
+                    <button
+                      className="k-btn k-btn-ghost k-btn-sm"
+                      onClick={() => setShowNewPatientForm(false)}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
-
         {/* Teste de Microfone */}
         <div className="consulta-mic-test">
           {micTesting ? (
@@ -1611,29 +1833,37 @@ export default function ConsultaPage() {
       {/* Header */}
       <div className="consulta-header">
         <div className="consulta-header-left">
-          <h2 className="consulta-title">Consulta Médica</h2>
-          {/* Step Indicators */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            {STEP_LABELS.map((label, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span
-                  className={`k-badge ${i === currentStep ? 'k-badge-success' : (i < currentStep ? 'k-badge-info' : '')}`}
-                  style={{
-                    opacity: i <= currentStep ? 1 : 0.4,
-                    fontSize: '0.6875rem',
-                    cursor: i < currentStep ? 'pointer' : 'default',
-                  }}
-                  onClick={() => { if (i < currentStep) setCurrentStep(i) }}
-                >
-                  {i < currentStep ? <CheckCircle2 size={10} /> : null}
-                  {label}
-                </span>
-                {i < STEP_LABELS.length - 1 && (
-                  <ChevronRight size={12} style={{ color: 'var(--k-text-muted)', opacity: 0.4 }} />
-                )}
+          {(() => {
+            const portalTarget = document.getElementById('topbar-portal-target');
+            const content = (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <h2 className="consulta-title" style={{ margin: 0, fontSize: '1.2rem', color: 'var(--k-text-main)', border: 'none', padding: 0 }}>Atendimento Médico</h2>
+                {/* Step Indicators */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                  {STEP_LABELS.map((label, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span
+                        className={`k-badge ${i === currentStep ? 'k-badge-success' : (i < currentStep ? 'k-badge-info' : '')}`}
+                        style={{
+                          opacity: i <= currentStep ? 1 : 0.4,
+                          fontSize: '0.6875rem',
+                          cursor: i < currentStep ? 'pointer' : 'default',
+                        }}
+                        onClick={() => { if (i < currentStep) setCurrentStep(i) }}
+                      >
+                        {i < currentStep ? <CheckCircle2 size={10} /> : null}
+                        {label}
+                      </span>
+                      {i < STEP_LABELS.length - 1 && (
+                        <ChevronRight size={12} style={{ color: 'var(--k-text-muted)', opacity: 0.4 }} />
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
+            );
+            return portalTarget ? createPortal(content, portalTarget) : content;
+          })()}
         </div>
         
       </div>
@@ -1722,3 +1952,5 @@ export default function ConsultaPage() {
     </div>
   )
 }
+
+// FORCE CACHE INVALIDATION 1787015370.2449138

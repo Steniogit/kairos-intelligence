@@ -9,6 +9,7 @@ import QuarentenaPage from './pages/clinico/QuarentenaPage'
 import ConsultaPage from './pages/clinico/ConsultaPage'
 import DocumentosPage from './pages/clinico/DocumentosPage'
 import HistoricoPage from './pages/clinico/HistoricoPage'
+import GrafoPage from './pages/clinico/GrafoPage'
 import './App.css'
 export default function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -25,6 +26,7 @@ export default function App() {
             <Route path="/clinico/quarentena" element={<ClinicalAuthProvider><QuarentenaPage /></ClinicalAuthProvider>} />
             <Route path="/clinico/documentos" element={<ClinicalAuthProvider><DocumentosPage /></ClinicalAuthProvider>} />
             <Route path="/clinico/historico" element={<ClinicalAuthProvider><HistoricoPage /></ClinicalAuthProvider>} />
+            <Route path="/clinico/grafo" element={<ClinicalAuthProvider><GrafoPage /></ClinicalAuthProvider>} />
             <Route path="*" element={<Navigate to="/clinico" replace />} />
           </Routes>
         </main>

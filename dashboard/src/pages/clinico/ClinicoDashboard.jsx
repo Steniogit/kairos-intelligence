@@ -58,7 +58,7 @@ const ACTION_CARDS = [
   {
     id: 'grafo',
     icon: Network,
-    title: 'Grafo de Conhecimento',
+    title: 'Base de Conhecimento',
     description: 'Explorar o grafo médico com busca inteligente',
     path: '/clinico/grafo',
     gradient: 'linear-gradient(135deg, #3b82f6, #2563eb)',
@@ -93,7 +93,7 @@ export default function ClinicoDashboard() {
       try {
         // Health check
         const health = await clinicalHealth()
-        setServiceStatus(health?.status === 'ok' ? 'online' : 'degraded')
+        setServiceStatus((health?.postgres === 'online' || health?.status === 'ok') ? 'online' : 'degraded')
       } catch {
         setServiceStatus('offline')
       }

@@ -1,0 +1,46 @@
+{
+    "low back pain": {
+        "condition": "Low Back Pain (Module 2: Musculoskeletal)",
+        "source": "WHO Package of Interventions for Rehabilitation (PIR)",
+        "interventions": [
+            "Therapeutic exercise (strengthening, motor control, aerobic).",
+            "Manual therapy (spinal manipulation and mobilization) as an adjunct.",
+            "Education on self-management, remaining active, and pain neuroscience.",
+            "Psychological therapies (CBT) for chronic pain with psychosocial risk factors.",
+            "Return to work interventions."
+        ],
+        "assistive_products": [
+            "Lumbar supports (rarely recommended for acute pain)",
+            "Mobility aids if severe disability"
+        ],
+        "workforce": [
+            "Physiotherapist",
+            "Occupational therapist",
+            "Psychologist",
+            "Medical doctor"
+        ]
+    },
+    "stroke": {
+        "condition": "Stroke (Module 3: Neurological)",
+        "source": "WHO Package of Interventions for Rehabilitation (PIR)",
+        "interventions": [
+            "Task-specific repetitive training for upper and lower limb recovery.",
+            "Gait training including treadmill and overground walking.",
+            "Swallowing assessment and dysphagia management.",
+            "Speech and language therapy for aphasia.",
+            "Spasticity management (positioning, orthoses, botulinum toxin adjunct)."
+        ],
+        "assistive_products": [
+            "Ankle-foot orthoses (AFO)",
+            "Walking frames/canes",
+            "Wheelchairs",
+            "Communication boards"
+        ],
+        "workforce": [
+            "Physiotherapist",
+            "Speech and language therapist",
+            "Occupational therapist",
+            "Nurse"
+        ]
+    }
+}

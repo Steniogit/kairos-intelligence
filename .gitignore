@@ -60,3 +60,7 @@ temp_docs/
 
 # Log Files
 /logs/
+
+clinical/gcp-credentials.json
+*gcp-credentials*.json
+*.bak*

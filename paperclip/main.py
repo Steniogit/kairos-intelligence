@@ -12,6 +12,9 @@ from datetime import datetime
 from typing import Optional
 from contextlib import asynccontextmanager
 
+from jose import JWTError, jwt
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -27,6 +30,17 @@ DATABASE_URL = os.getenv(
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
+import bcrypt
+
+SECRET_KEY = "kairos_clinical_secret_key_change_in_production"
+ALGORITHM = "HS256"
+
+def hash_pin(pin: str) -> str:
+    return bcrypt.hashpw(pin.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+def verify_pin(pin: str, hashed_pin: str) -> bool:
+    return bcrypt.checkpw(pin.encode('utf-8'), hashed_pin.encode('utf-8'))
 
 
 # ─── Models ────────────────────────────────────────────────────
@@ -45,6 +59,18 @@ class TenantDB(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class DoctorDB(Base):
+    """Tabela de médicos."""
+    __tablename__ = "doctors"
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String(255), nullable=False)
+    crm = Column(String(50), unique=True, nullable=False)
+    pin_hash = Column(String(255), nullable=False)
+    email = Column(String(255), unique=True, nullable=True)
+    tenant_slug = Column(String(100), nullable=False, default="clinica-demo")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 # ─── Pydantic Schemas ─────────────────────────────────────────
 class TenantCreate(BaseModel):
     name: str = Field(..., description="Nome da clínica", example="Clínica Sorriso")
@@ -52,6 +78,22 @@ class TenantCreate(BaseModel):
     evolution_instance: str = Field(..., description="Nome da instância Evolution Go", example="clinica-sorriso-wa")
     config: dict = Field(default_factory=dict, description="Configurações da clínica")
     soul_prompt: str = Field(default="", description="SOUL personalizado do agente")
+
+
+class DoctorRegister(BaseModel):
+    name: str
+    crm: str
+    pin: str
+    email: Optional[str] = None
+    invite_code: Optional[str] = None
+
+class DoctorLogin(BaseModel):
+    crm: str
+    pin: str
+
+class PinRecover(BaseModel):
+    crm: str
+    email: str
 
 
 class TenantUpdate(BaseModel):
@@ -135,11 +177,62 @@ def get_db():
 
 # ─── Routes ────────────────────────────────────────────────────
 
-@app.get("/health", response_model=HealthResponse, tags=["System"])
+@app.get("/api/health", response_model=HealthResponse, tags=["System"])
 def health_check(db: Session = Depends(get_db)):
     """Health check do serviço."""
     count = db.query(TenantDB).count()
     return HealthResponse(tenants_count=count)
+
+
+@app.post("/api/auth/register", tags=["Clinical Auth"])
+def register_doctor(data: DoctorRegister, db: Session = Depends(get_db)):
+    existing = db.query(DoctorDB).filter(DoctorDB.crm == data.crm).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="CRM já cadastrado")
+    # Resolve tenant_slug from invite_code or use default
+    tenant_slug = "clinica-demo"
+    if data.invite_code:
+        tenant = db.query(TenantDB).filter(TenantDB.slug == data.invite_code.lower().replace(' ', '-')).first()
+        if tenant:
+            tenant_slug = tenant.slug
+    hashed_pin = hash_pin(data.pin)
+    doctor = DoctorDB(name=data.name, crm=data.crm, pin_hash=hashed_pin, email=data.email, tenant_slug=tenant_slug)
+    db.add(doctor)
+    db.commit()
+    return {"status": "success", "message": "Médico cadastrado"}
+
+
+@app.post("/api/auth/login", tags=["Clinical Auth"])
+def login_doctor(data: DoctorLogin, db: Session = Depends(get_db)):
+    doctor = db.query(DoctorDB).filter(DoctorDB.crm == data.crm).first()
+    if not doctor or not verify_pin(data.pin, doctor.pin_hash):
+        raise HTTPException(status_code=401, detail="Credenciais inválidas")
+    
+    token = jwt.encode({"sub": doctor.crm, "name": doctor.name}, SECRET_KEY, algorithm=ALGORITHM)
+    return {
+        "token": token,
+        "access_token": token,
+        "token_type": "bearer",
+        "name": doctor.name,
+        "crm": doctor.crm,
+        "tenant_slug": doctor.tenant_slug,
+        "tenant_name": doctor.tenant_slug.replace('-', ' ').title(),
+        "avatar_url": None,
+        "is_admin": False,
+        "user": {"name": doctor.name, "crm": doctor.crm},
+    }
+
+
+@app.post("/api/auth/recover-pin", tags=["Clinical Auth"])
+def recover_pin(data: PinRecover, db: Session = Depends(get_db)):
+    doctor = db.query(DoctorDB).filter(DoctorDB.crm == data.crm, DoctorDB.email == data.email).first()
+    if not doctor:
+        raise HTTPException(status_code=404, detail="Médico não encontrado com estes dados")
+    
+    new_pin = "123456" # Simple temporary PIN for MVP
+    doctor.pin_hash = hash_pin(new_pin)
+    db.commit()
+    return {"status": "success", "message": f"Seu novo PIN temporário é: {new_pin}"}
 
 
 @app.post("/api/tenants", response_model=TenantResponse, status_code=201, tags=["Tenants"])

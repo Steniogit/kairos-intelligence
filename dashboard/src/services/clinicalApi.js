@@ -173,6 +173,35 @@ export async function createPatient(patient) {
   return data
 }
 
+// ═══ Arquivos do Paciente ════════════════════════════════
+
+export async function uploadPatientFile(patientId, file, fileType = 'outro', description = '') {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('file_type', fileType)
+  formData.append('description', description)
+  const { data } = await clinicalApi.post(`/api/v1/patients/${patientId}/files`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 60000,
+  })
+  return data
+}
+
+export async function listPatientFiles(patientId) {
+  const { data } = await clinicalApi.get(`/api/v1/patients/${patientId}/files`)
+  return data
+}
+
+export async function getFileDownloadUrl(fileId) {
+  const { data } = await clinicalApi.get(`/api/v1/patients/files/${fileId}/download`)
+  return data
+}
+
+export async function deletePatientFile(fileId) {
+  const { data } = await clinicalApi.delete(`/api/v1/patients/files/${fileId}`)
+  return data
+}
+
 // ═══ Consultas (Histórico) ══════════════════════════════════
 
 export async function saveConsultation(consultation) {
@@ -196,3 +225,11 @@ export async function getConsultation(id) {
 
 export { CLINICAL_API_URL }
 export default clinicalApi
+
+export async function searchKnowledgeGraph(message, doctorId) {
+  const { data } = await clinicalApi.post('api/v1/clinical/graph/chat', {
+    message,
+    doctor_id: doctorId
+  })
+  return data
+}

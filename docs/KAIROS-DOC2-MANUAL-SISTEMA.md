@@ -24,6 +24,7 @@
 2. Os 5 Agentes — O Que Cada Um Faz
 3. Resposta Multimodal Condicional (Áudio e Texto)
 4. O Que Você Gerencia Pelo Dashboard
+   4.1. Módulo Clínico — Atendimento Médico & Assistente de IA
 5. O Que é Automático (não precisa fazer nada)
 6. O Que Precisa de Suporte Técnico
 7. Como Usar o Prometheus
@@ -253,6 +254,37 @@ O sistema tem dois painéis de controle acessíveis pelo navegador:
 ✅ Verificar se o backup rodou
 
 ---
+
+
+---
+
+## 4.1. MÓDULO CLÍNICO — ATENDIMENTO MÉDICO & ASSISTENTE DE IA
+
+O **Módulo Clínico (Kairós Clinical)** é a interface de apoio ao médico durante a consulta presencial ou teleatendimento, integrando inteligência artificial, histórico de pacientes, gravação de consultas e repositório de documentos médicos.
+
+### Funcionalidades do Painel de Atendimento Médico:
+
+#### 1. Identificação e Busca Inteligente de Pacientes
+- **Busca Flexível:** A pesquisa por Nome ou CPF ignora acentos, cedilhas e diferenças entre maiúsculas e minúsculas (usando a extensão `unaccent` no PostgreSQL). Digitar "Joao" localiza "João" imediatamente.
+- **Formatação de Data:** Exibição clara e padronizada no formato brasileiro `DD/MM/AAAA`.
+- **Cadastro Rápido de Novos Pacientes:** Quando um paciente não for encontrado na busca, um botão *"Cadastrar Novo Paciente"* permite registrar na hora o **Nome Completo, CPF (com máscara automática) e Data de Nascimento**, vinculando o paciente imediatamente ao atendimento em andamento.
+
+#### 2. Repositório de Documentos e Exames (Armazenamento MinIO S3)
+- **Anexos de Pacientes:** Permite upload de arquivos médicos de até **50 MB** por arquivo (PDFs de exames laboratoriais, imagens radiológicas, laudos e receitas anteriores).
+- **Categorização:** Os arquivos podem ser categorizados como:
+  - *Exame Laboratorial*
+  - *Exame de Imagem*
+  - *Laudo Médico*
+  - *Receita*
+  - *Outro*
+- **Visualização Segura:** Visualização instantânea em nova aba através de URLs temporárias assinadas via proxy seguro (`/storage/`).
+- **Exclusão:** Controle para remoção de arquivos obsoletos ou enviados por engano.
+
+#### 3. Assistente de IA & Admed IA
+- **Admed IA:** Conexão com a inteligência clínica para auxílio em raciocínio diagnóstico e triagem.
+- **Assistente de IA:** Chat integrado para consultas rápidas de protocolos e bases de conhecimento da clínica.
+- **Consulta ao Vivo & Revisão SOAP:** Transcrição e estruturação automática de consultas em formato SOAP (Subjetivo, Objetivo, Avaliação, Plano) com geração de documentos clínicos e relatórios em PDF.
+
 
 ## 5. O QUE É AUTOMÁTICO (NÃO PRECISA FAZER NADA)
 

@@ -5,7 +5,7 @@
 
 import axios from 'axios'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -82,3 +82,27 @@ export async function healthCheck() {
 }
 
 export default api
+
+// ── Clinical Auth (Paperclip) ────────────────────────────────
+
+export async function loginDoctor(payload) {
+  const { data } = await api.post('/auth/login', payload)
+  return data
+}
+
+export async function registerDoctor(payload) {
+  const { data } = await api.post('/auth/register', payload)
+  return data
+}
+
+export async function recoverPin(crm) {
+  const { data } = await api.post('/auth/recover-pin', { crm, email: '' })
+  return data
+}
+
+export async function uploadAvatar(crm, file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  const { data } = await api.post(`/auth/doctor/${crm}/avatar`, formData)
+  return data
+}
