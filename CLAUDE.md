@@ -98,6 +98,12 @@ docker logs -f --tail 100 kairos-dashboard
 
 ## 📂 Armazenamento de Arquivos & Proxy MinIO
 
+3. **Upload de Documentos para Biblioteca de Conhecimentos:**
+   - Endpoint: `POST /api/v1/quarantine/suggest`
+   - Suporta upload multi-formato (`.pdf, .docx, .doc, .txt, .rtf, .md, .csv, .xlsx, .json, .tsv`) até 50MB.
+   - Extração automática de texto via `pypdf` e `python-docx` para alimentar o Grafo de Conhecimento e a Curadoria Central.
+   - Endpoint de visualização: `GET /api/v1/quarantine/{item_id}/file` (presigned URL proxied via `/storage/`).
+
 1. **Upload:**
    - Endpoint: `POST /api/v1/patients/{patient_id}/files`
    - O arquivo é enviado diretamente ao bucket MinIO (`kairos-media`) com chave `{tenant_slug}/patients/{patient_id}/{uuid}.ext`.

@@ -2,6 +2,7 @@
    QuarentenaPage — Central de Curadoria e Biblioteca de Conhecimentos
    - Visão Admin: Quarentena do Grafo (Curadoria Central)
    - Visão Médico: Minhas Sugestões para Biblioteca de Conhecimentos
+   - Suporte a Anexo de Arquivos (PDF, DOCX, DOC, TXT, RTF, MD, CSV, XLSX)
    ============================================================ */
 
 import { useState, useEffect, useCallback } from 'react'
@@ -29,9 +30,20 @@ import {
   Sparkles,
   Info,
   Clock,
-  FileText
+  FileText,
+  Upload,
+  Paperclip,
+  Trash2,
+  Eye,
+  FileDown
 } from 'lucide-react'
-import { fetchQuarantine, approveQuarantine, rejectQuarantine, suggestKnowledge } from '../../services/clinicalApi'
+import {
+  fetchQuarantine,
+  approveQuarantine,
+  rejectQuarantine,
+  suggestKnowledge,
+  getQuarantineFileUrl
+} from '../../services/clinicalApi'
 import { useClinicalAuth } from '../../components/ClinicalAuthGate'
 import { useToast } from '../../components/Toast'
 import ConfirmModal from '../../components/ConfirmModal'
@@ -65,6 +77,7 @@ export default function QuarentenaPage() {
   const [expandedId, setExpandedId] = useState(null)
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [actionLoading, setActionLoading] = useState(null)
+  const [fileLoadingId, setFileLoadingId] = useState(null)
 
   // Modais
   const [confirmModal, setConfirmModal] = useState({ open: false, type: null, ids: [] })
@@ -84,6 +97,7 @@ export default function QuarentenaPage() {
     content_text: '',
     notes: ''
   })
+  const [selectedFile, setSelectedFile] = useState(null)
   const [suggesting, setSuggesting] = useState(false)
 
   const loadItems = useCallback(async () => {
@@ -114,6 +128,13 @@ export default function QuarentenaPage() {
     }
   }
 
+  const formatFileSize = (bytes) => {
+    if (!bytes) return ''
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+
   // Filtragem
   const filtered = items.filter((item) => {
     const matchesStatus = filterStatus === 'all' || item.status === filterStatus
@@ -121,6 +142,7 @@ export default function QuarentenaPage() {
     const matchesSearch =
       !search ||
       (item.source_url || '').toLowerCase().includes(term) ||
+      (item.file_name || '').toLowerCase().includes(term) ||
       (item.raw_text || '').toLowerCase().includes(term) ||
       (item.submitted_by || '').toLowerCase().includes(term) ||
       JSON.stringify(item.extracted_data || {}).toLowerCase().includes(term)
@@ -147,6 +169,23 @@ export default function QuarentenaPage() {
       setSelectedIds(new Set())
     } else {
       setSelectedIds(new Set(filtered.map((i) => i.id)))
+    }
+  }
+
+  // Abrir / Baixar arquivo anexo
+  async function handleViewFile(itemId) {
+    setFileLoadingId(itemId)
+    try {
+      const data = await getQuarantineFileUrl(itemId)
+      if (data?.url) {
+        window.open(data.url, '_blank')
+      } else {
+        addToast('Arquivo não disponível para visualização.', 'warning')
+      }
+    } catch (err) {
+      addToast('Erro ao abrir arquivo anexo.', 'error')
+    } finally {
+      setFileLoadingId(null)
     }
   }
 
@@ -232,25 +271,44 @@ export default function QuarentenaPage() {
     setConfirmModal({ open: true, type, ids })
   }
 
+  // Manipulação de Arquivo no Formulário
+  function handleFileChange(e) {
+    const file = e.target.files?.[0]
+    if (file) {
+      setSelectedFile(file)
+      // Preencher título se vazio
+      if (!suggestForm.title.trim()) {
+        const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ')
+        setSuggestForm((prev) => ({ ...prev, title: cleanName }))
+      }
+    }
+  }
+
   // Envio de Nova Sugestão (Médico)
   async function handleCreateSuggestion(e) {
     e.preventDefault()
-    if (!suggestForm.title.trim()) {
-      addToast('Por favor, informe o título do protocolo ou artigo.', 'warning')
+    if (!suggestForm.title.trim() && !selectedFile) {
+      addToast('Por favor, informe o título ou anexe um arquivo.', 'warning')
       return
     }
     setSuggesting(true)
     try {
-      await suggestKnowledge({
-        title: suggestForm.title.trim(),
-        source_url: suggestForm.source_url.trim(),
-        source_type: suggestForm.source_type,
-        content_text: suggestForm.content_text.trim(),
-        notes: suggestForm.notes.trim()
-      })
-      addToast('Sugestão enviada com sucesso para análise do Administrador!', 'success')
+      const formData = new FormData()
+      formData.append('title', suggestForm.title.trim())
+      formData.append('source_type', suggestForm.source_type)
+      formData.append('source_url', suggestForm.source_url.trim())
+      formData.append('content_text', suggestForm.content_text.trim())
+      formData.append('notes', suggestForm.notes.trim())
+
+      if (selectedFile) {
+        formData.append('file', selectedFile)
+      }
+
+      await suggestKnowledge(formData)
+      addToast('Sugestão e arquivo enviados com sucesso para a curadoria!', 'success')
       setSuggestModalOpen(false)
       setSuggestForm({ title: '', source_url: '', source_type: 'protocolo', content_text: '', notes: '' })
+      setSelectedFile(null)
       await loadItems()
     } catch (err) {
       addToast('Erro ao enviar sugestão: ' + (err.response?.data?.detail || err.message), 'error')
@@ -282,7 +340,7 @@ export default function QuarentenaPage() {
             <p className="k-text-sm k-text-muted">
               {isAdmin
                 ? 'Curadoria Central — Revisão e aprovação de entidades médicas para o Grafo Global'
-                : 'Envie protocolos e diretrizes médicas para análise da curadoria'}
+                : 'Envie protocolos, bulas e artigos médicos (PDF, DOCX, links) para análise da curadoria'}
             </p>
           </div>
         </div>
@@ -356,7 +414,7 @@ export default function QuarentenaPage() {
           <Search size={18} className="quarentena-search-icon" />
           <input
             className="k-input"
-            placeholder={isAdmin ? "Buscar por URL, médico ou entidade..." : "Buscar nas minhas sugestões..."}
+            placeholder={isAdmin ? "Buscar por título, arquivo, médico ou entidade..." : "Buscar nas minhas sugestões..."}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             id="input-search-quarentena"
@@ -406,7 +464,7 @@ export default function QuarentenaPage() {
           <h3>{search || filterStatus !== 'all' ? 'Nenhuma sugestão encontrada' : 'Nenhum item na lista'}</h3>
           <p className="k-text-sm k-text-muted" style={{ marginTop: 4 }}>
             {!isAdmin
-              ? 'Você ainda não enviou sugestões ou não há itens com o filtro selecionado.'
+              ? 'Você ainda não enviou sugestões de artigos ou diretrizes.'
               : 'Nenhuma entidade médica aguardando curadoria.'}
           </p>
           {!isAdmin && (
@@ -440,6 +498,7 @@ export default function QuarentenaPage() {
             const cypherQueries = getCypherQueries(item)
             const statusConf = STATUS_CONFIG[item.status] || STATUS_CONFIG.pending
             const StatusIconComp = statusConf.icon
+            const hasAttachedFile = Boolean(item.storage_key || item.file_name)
 
             return (
               <div
@@ -485,7 +544,7 @@ export default function QuarentenaPage() {
                             </a>
                           ) : (
                             <span className="quarentena-title-text">
-                              <FileText size={14} style={{ display: 'inline', marginRight: 6 }} />
+                              <FileText size={15} style={{ display: 'inline', marginRight: 6, color: 'var(--k-accent)' }} />
                               {item.source_url}
                             </span>
                           )
@@ -504,7 +563,34 @@ export default function QuarentenaPage() {
                             <span>Enviado em {formatDateBR(item.created_at)}</span>
                           </>
                         )}
+                        {hasAttachedFile && (
+                          <>
+                            <span>•</span>
+                            <span className="quarentena-file-tag">
+                              <Paperclip size={11} /> {item.file_name} {item.file_size ? `(${formatFileSize(item.file_size)})` : ''}
+                            </span>
+                          </>
+                        )}
                       </div>
+
+                      {/* Botão de Acesso Rápido ao Arquivo Anexo */}
+                      {hasAttachedFile && (
+                        <div style={{ marginTop: 6 }} onClick={(e) => e.stopPropagation()}>
+                          <button
+                            className="k-btn k-btn-secondary k-btn-sm quarentena-view-file-btn"
+                            onClick={() => handleViewFile(item.id)}
+                            disabled={fileLoadingId === item.id}
+                            title="Abrir arquivo anexo em nova aba"
+                          >
+                            {fileLoadingId === item.id ? (
+                              <Loader2 size={13} className="k-animate-spin" />
+                            ) : (
+                              <Eye size={13} />
+                            )}
+                            Ver Arquivo Anexo ({item.file_name || 'Documento'})
+                          </button>
+                        </div>
+                      )}
 
                       {/* Feedback Educativo para o Médico / Usuário */}
                       {!isAdmin && (
@@ -586,7 +672,7 @@ export default function QuarentenaPage() {
                     {item.raw_text && (
                       <div className="quarentena-section">
                         <h4 className="quarentena-section-title">
-                          <FileText size={14} /> Conteúdo / Resumo Enviado
+                          <FileText size={14} /> Conteúdo Extraído / Resumo
                         </h4>
                         <div className="quarentena-raw-text-box">
                           {item.raw_text}
@@ -640,7 +726,7 @@ export default function QuarentenaPage() {
         </div>
       )}
 
-      {/* Modal de Nova Sugestão (Médico) */}
+      {/* Modal de Nova Sugestão com Upload Multi-Formato */}
       {suggestModalOpen && (
         <div className="quarentena-modal-backdrop">
           <div className="quarentena-modal-card">
@@ -651,18 +737,62 @@ export default function QuarentenaPage() {
                 </div>
                 <div>
                   <h3 className="quarentena-modal-title">Sugerir Novo Conhecimento</h3>
-                  <p className="k-text-xs k-text-muted">A curadoria do administrador analisará o material para inserção no Grafo Médico</p>
+                  <p className="k-text-xs k-text-muted">Envie arquivos (PDF, DOCX), links ou textos para análise da curadoria médica</p>
                 </div>
               </div>
               <button
                 className="k-btn k-btn-ghost k-btn-icon"
-                onClick={() => setSuggestModalOpen(false)}
+                onClick={() => { setSuggestModalOpen(false); setSelectedFile(null); }}
               >
                 <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleCreateSuggestion} className="quarentena-modal-form">
+              {/* Área de Upload de Arquivo */}
+              <div className="quarentena-upload-area">
+                <label className="quarentena-form-label">
+                  Anexar Arquivo Médico (PDF, DOCX, DOC, TXT, RTF, MD, CSV, XLSX)
+                </label>
+                
+                {selectedFile ? (
+                  <div className="quarentena-selected-file">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+                      <FileText size={20} style={{ color: 'var(--k-accent)', flexShrink: 0 }} />
+                      <div style={{ minWidth: 0 }}>
+                        <div className="quarentena-selected-file-name">{selectedFile.name}</div>
+                        <div className="quarentena-selected-file-size">{formatFileSize(selectedFile.size)}</div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="k-btn k-btn-ghost k-btn-sm"
+                      onClick={() => setSelectedFile(null)}
+                      title="Remover arquivo"
+                      style={{ color: 'var(--k-danger)' }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="quarentena-dropzone">
+                    <Upload size={24} className="quarentena-dropzone-icon" />
+                    <span style={{ fontWeight: 600, color: 'var(--k-text-primary)' }}>
+                      Clique para selecionar ou arraste o arquivo aqui
+                    </span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--k-text-muted)' }}>
+                      Formatos aceitos: PDF, DOCX, DOC, TXT, RTF, MD, CSV, XLSX (até 50 MB)
+                    </span>
+                    <input
+                      type="file"
+                      hidden
+                      onChange={handleFileChange}
+                      accept=".pdf,.docx,.doc,.txt,.rtf,.md,.csv,.xlsx,.json,.tsv"
+                    />
+                  </label>
+                )}
+              </div>
+
               <label className="quarentena-form-label">
                 Título do Protocolo, Artigo ou Bula *
               </label>
@@ -671,7 +801,7 @@ export default function QuarentenaPage() {
                 placeholder="Ex: Protocolo de Manejo Clínico de Dengue 2026"
                 value={suggestForm.title}
                 onChange={(e) => setSuggestForm({ ...suggestForm, title: e.target.value })}
-                required
+                required={!selectedFile}
               />
 
               <div className="quarentena-form-row">
@@ -703,12 +833,12 @@ export default function QuarentenaPage() {
               </div>
 
               <label className="quarentena-form-label">
-                Resumo, Texto Principal ou Observações do Médico
+                Resumo, Texto Principal ou Observações do Médico (Opcional)
               </label>
               <textarea
                 className="k-input quarentena-textarea"
-                rows={4}
-                placeholder="Cole aqui os pontos mais importantes, doses recomendadas, contraindicações ou justificativa de uso..."
+                rows={3}
+                placeholder="Pontos mais importantes, doses recomendadas, justificativa de uso ou contexto..."
                 value={suggestForm.content_text}
                 onChange={(e) => setSuggestForm({ ...suggestForm, content_text: e.target.value })}
               />
@@ -717,7 +847,7 @@ export default function QuarentenaPage() {
                 <button
                   type="button"
                   className="k-btn k-btn-secondary"
-                  onClick={() => setSuggestModalOpen(false)}
+                  onClick={() => { setSuggestModalOpen(false); setSelectedFile(null); }}
                 >
                   Cancelar
                 </button>
@@ -727,7 +857,7 @@ export default function QuarentenaPage() {
                   disabled={suggesting}
                 >
                   {suggesting ? (
-                    <><Loader2 size={16} className="k-animate-spin" /> Enviando...</>
+                    <><Loader2 size={16} className="k-animate-spin" /> Enviando Arquivo...</>
                   ) : (
                     <><Send size={16} /> Enviar para a Curadoria</>
                   )}

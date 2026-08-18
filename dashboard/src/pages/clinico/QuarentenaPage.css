@@ -178,6 +178,38 @@
   color: var(--k-text-secondary);
 }
 
+.quarentena-file-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--k-accent-hover);
+  background: rgba(139, 92, 246, 0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+}
+
+.quarentena-view-file-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem !important;
+  padding: 4px 10px !important;
+  background: rgba(139, 92, 246, 0.12) !important;
+  border: 1px solid rgba(139, 92, 246, 0.25) !important;
+  color: var(--k-text-primary) !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  transition: all var(--k-transition-fast);
+}
+
+.quarentena-view-file-btn:hover {
+  background: rgba(139, 92, 246, 0.25) !important;
+  border-color: var(--k-accent) !important;
+  color: white !important;
+}
+
 .quarentena-item-url {
   font-size: 0.9375rem;
   font-weight: 600;
@@ -308,7 +340,7 @@
   color: var(--k-text-secondary);
   line-height: 1.5;
   white-space: pre-wrap;
-  max-height: 200px;
+  max-height: 220px;
   overflow-y: auto;
 }
 
@@ -367,6 +399,63 @@
   margin: 0;
 }
 
+/* ── Upload Area na Modal ─── */
+.quarentena-upload-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quarentena-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 20px;
+  border: 2px dashed var(--k-border);
+  border-radius: var(--k-radius-lg);
+  background: rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: all var(--k-transition-fast);
+  text-align: center;
+}
+
+.quarentena-dropzone:hover {
+  border-color: var(--k-accent);
+  background: rgba(139, 92, 246, 0.05);
+}
+
+.quarentena-dropzone-icon {
+  color: var(--k-accent);
+  margin-bottom: 2px;
+}
+
+.quarentena-selected-file {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: var(--k-radius-md);
+  gap: 12px;
+}
+
+.quarentena-selected-file-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--k-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quarentena-selected-file-size {
+  font-size: 0.75rem;
+  color: var(--k-text-muted);
+}
+
 /* ── Modais ─── */
 .quarentena-modal-backdrop {
   position: fixed;
@@ -386,10 +475,11 @@
   border: 1px solid var(--k-border);
   border-radius: var(--k-radius-xl);
   width: 100%;
-  max-width: 540px;
+  max-width: 580px;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
   animation: slideUp var(--k-transition-normal) ease-out;
-  overflow: hidden;
 }
 
 .quarentena-modal-header {
@@ -440,7 +530,7 @@
 
 .quarentena-textarea {
   resize: vertical;
-  min-height: 80px;
+  min-height: 70px;
 }
 
 .quarentena-modal-actions {

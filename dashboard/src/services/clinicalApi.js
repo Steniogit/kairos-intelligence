@@ -89,7 +89,20 @@ export async function rejectQuarantine(id, notes = '', reviewer = 'admin') {
 }
 
 export async function suggestKnowledge(payload) {
+  // If payload is FormData, send with multipart headers
+  if (payload instanceof FormData) {
+    const { data } = await clinicalApi.post('/api/v1/quarantine/suggest', payload, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120000,
+    })
+    return data
+  }
   const { data } = await clinicalApi.post('/api/v1/quarantine/suggest', payload)
+  return data
+}
+
+export async function getQuarantineFileUrl(itemId) {
+  const { data } = await clinicalApi.get(`/api/v1/quarantine/${itemId}/file`)
   return data
 }
 

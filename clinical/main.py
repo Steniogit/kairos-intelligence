@@ -360,6 +360,43 @@ async def search_graph(query: str, limit: int = 10, tenant_slug: str = Depends(g
     return {"query": query, "results": results}
 
 
+
+def extract_text_from_file_bytes(filename: str, file_bytes: bytes) -> str:
+    """Extrai texto limpo de arquivos PDF, DOCX, TXT, etc."""
+    ext = Path(filename).suffix.lower()
+    text_content = ""
+    try:
+        if ext == ".pdf":
+            try:
+                from pypdf import PdfReader
+                reader = PdfReader(io.BytesIO(file_bytes))
+                pages_text = []
+                for page in reader.pages[:50]:
+                    t = page.extract_text()
+                    if t:
+                        pages_text.append(t)
+                text_content = "\n\n".join(pages_text)
+            except Exception as e:
+                logger.warning(f"pypdf extraction error: {e}")
+        elif ext in [".docx", ".doc"]:
+            try:
+                import docx
+                doc = docx.Document(io.BytesIO(file_bytes))
+                text_content = "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
+            except Exception as e:
+                logger.warning(f"docx extraction error: {e}")
+        elif ext in [".txt", ".md", ".csv", ".json", ".rtf", ".tsv"]:
+            try:
+                text_content = file_bytes.decode("utf-8")
+            except UnicodeDecodeError:
+                text_content = file_bytes.decode("latin-1", errors="ignore")
+        else:
+            text_content = file_bytes.decode("utf-8", errors="ignore")
+    except Exception as e:
+        logger.warning(f"Error extracting text from {filename}: {e}")
+        text_content = ""
+    return text_content
+
 # ═══════════════════════════════════════════════════════════
 # Quarentena de Conhecimento
 # ═══════════════════════════════════════════════════════════
@@ -377,23 +414,17 @@ class RejectPayload(BaseModel):
     reviewer: Optional[str] = "admin"
     notes: Optional[str] = ""
 
-class SuggestRequest(BaseModel):
-    title: Optional[str] = ""
-    source_url: Optional[str] = ""
-    content_text: Optional[str] = ""
-    source_type: Optional[str] = "artigo"
-    notes: Optional[str] = ""
-
 
 @app.get("/api/v1/quarantine")
 async def list_quarantine(status: str = "all", limit: int = 100, conn = Depends(get_tenant_db)):
-    """Lista itens na quarentena de conhecimento com todos os metadados."""
+    """Lista itens na quarentena de conhecimento com suporte a arquivos anexos."""
     if status == "all" or not status:
         result = conn.execute(
             text("""
                 SELECT id, source_url, source_type, raw_text, entities_json,
                        relationships_json, graph_cypher, status, submitted_by,
-                       reviewer_notes, reviewed_by, reviewed_at, created_at
+                       reviewer_notes, reviewed_by, reviewed_at, storage_key,
+                       file_name, mime_type, file_size, created_at
                 FROM knowledge_quarantine
                 ORDER BY created_at DESC
                 LIMIT :limit
@@ -405,7 +436,8 @@ async def list_quarantine(status: str = "all", limit: int = 100, conn = Depends(
             text("""
                 SELECT id, source_url, source_type, raw_text, entities_json,
                        relationships_json, graph_cypher, status, submitted_by,
-                       reviewer_notes, reviewed_by, reviewed_at, created_at
+                       reviewer_notes, reviewed_by, reviewed_at, storage_key,
+                       file_name, mime_type, file_size, created_at
                 FROM knowledge_quarantine
                 WHERE status = :status
                 ORDER BY created_at DESC
@@ -434,37 +466,114 @@ async def list_quarantine(status: str = "all", limit: int = 100, conn = Depends(
 
 
 @app.post("/api/v1/quarantine/suggest")
-async def suggest_knowledge(data: SuggestRequest, request: Request, conn = Depends(get_tenant_db)):
-    """Permite que medicos enviem sugestoes de conhecimento para a biblioteca."""
-    submitted_by = "Medico"
+async def suggest_knowledge(
+    request: Request,
+    title: str = Form(""),
+    source_type: str = Form("protocolo"),
+    source_url: str = Form(""),
+    content_text: str = Form(""),
+    notes: str = Form(""),
+    file: Optional[UploadFile] = File(None),
+    conn = Depends(get_tenant_db)
+):
+    """Permite que médicos enviem sugestões com links, textos ou arquivos anexados (PDF, DOCX, TXT, etc)."""
+    tenant_slug = get_tenant_slug(request)
+    submitted_by = "Médico"
     try:
         auth = request.headers.get("authorization", "")
         if auth.startswith("Bearer "):
             from jose import jwt
             token_data = jwt.decode(auth[7:], options={"verify_signature": False})
-            submitted_by = f"{token_data.get('name', 'Medico')} (CRM: {token_data.get('crm', 'N/I')})"
+            submitted_by = f"{token_data.get('name', 'Médico')} (CRM: {token_data.get('crm', 'N/I')})"
     except Exception:
         pass
 
-    url_or_title = (data.source_url or data.title or "Sugestao Medica").strip()
-    raw = (data.content_text or data.notes or "").strip()
+    storage_key = ""
+    original_filename = ""
+    mime_type = ""
+    file_size = 0
+    extracted_text = ""
+
+    if file and file.filename:
+        original_filename = file.filename
+        file_bytes = await file.read()
+        file_size = len(file_bytes)
+        mime_type = file.content_type or "application/octet-stream"
+
+        # Upload para MinIO
+        if minio_client:
+            ext = Path(original_filename).suffix.lower()
+            storage_key = f"{tenant_slug}/knowledge/{uuid_lib.uuid4().hex}{ext}"
+            try:
+                minio_client.put_object(
+                    MINIO_BUCKET,
+                    storage_key,
+                    io.BytesIO(file_bytes),
+                    length=file_size,
+                    content_type=mime_type
+                )
+            except Exception as e:
+                logger.error(f"Erro ao salvar arquivo no MinIO: {e}")
+
+        # Extrair texto do arquivo
+        extracted_text = extract_text_from_file_bytes(original_filename, file_bytes)
+
+    display_title = (title or original_filename or source_url or "Sugestão Médica").strip()
+    raw = (content_text or extracted_text or notes or "").strip()
 
     row = conn.execute(
         text("""
             INSERT INTO knowledge_quarantine
-            (source_url, source_type, raw_text, status, submitted_by, created_at)
-            VALUES (:url, :type, :raw, 'pending', :submitted_by, NOW())
+            (source_url, source_type, raw_text, status, submitted_by, storage_key, file_name, mime_type, file_size, created_at)
+            VALUES (:url, :type, :raw, 'pending', :submitted_by, :storage_key, :file_name, :mime_type, :file_size, NOW())
             RETURNING id, created_at
         """),
         {
-            "url": url_or_title,
-            "type": data.source_type or "artigo",
+            "url": display_title,
+            "type": source_type or "protocolo",
             "raw": raw,
-            "submitted_by": submitted_by
+            "submitted_by": submitted_by,
+            "storage_key": storage_key,
+            "file_name": original_filename,
+            "mime_type": mime_type,
+            "file_size": file_size,
         }
     ).fetchone()
     conn.commit()
-    return {"status": "queued", "id": row[0], "created_at": str(row[1])}
+    return {
+        "status": "queued",
+        "id": row[0],
+        "file_name": original_filename,
+        "created_at": str(row[1])
+    }
+
+
+@app.get("/api/v1/quarantine/{item_id}/file")
+async def get_quarantine_file_url(item_id: int, request: Request, conn = Depends(get_tenant_db)):
+    """Gera URL assinada para visualização/download do arquivo anexo de conhecimento."""
+    if not minio_client:
+        raise HTTPException(status_code=503, detail="Armazenamento MinIO não disponível")
+    
+    row = conn.execute(
+        text("SELECT storage_key, file_name, mime_type FROM knowledge_quarantine WHERE id = :id"),
+        {"id": item_id}
+    ).fetchone()
+    
+    if not row or not row[0]:
+        raise HTTPException(status_code=404, detail="Arquivo não encontrado nesta sugestão")
+    
+    from datetime import timedelta
+    url = minio_client.presigned_get_object(
+        MINIO_BUCKET,
+        row[0],
+        expires=timedelta(hours=2),
+    )
+    proxied_url = url.replace("http://kairos-minio:9000", "/storage").replace("http://127.0.0.1:9000", "/storage").replace("http://localhost:9000", "/storage")
+    return {
+        "url": proxied_url,
+        "file_name": row[1],
+        "mime_type": row[2]
+    }
 
 
 @app.post("/api/v1/quarantine")
