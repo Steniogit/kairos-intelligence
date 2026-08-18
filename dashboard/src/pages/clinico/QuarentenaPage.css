@@ -599,3 +599,10 @@
   color: #a3e635;
   font-weight: 600;
 }
+
+.quarentena-dropzone--active {
+  border-color: var(--k-accent) !important;
+  background: rgba(139, 92, 246, 0.15) !important;
+  transform: scale(1.01);
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3) !important;
+}
